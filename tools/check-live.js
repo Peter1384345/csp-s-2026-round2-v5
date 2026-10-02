@@ -51,6 +51,13 @@ const ROOT = path.join(__dirname, '..');
   const judgeJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('judge.js') >= 0) || 'js/core/judge.js'))).text();
   ok(judgeJs.indexOf('serviceErrors') >= 0, '判题器上报 serviceErrors 字段');
 
+  /* 3b. 知识星图已上线 */
+  const mapJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('starmap.js') >= 0) || 'js/views/starmap.js'))).text();
+  ok(mapJs.indexOf('sm-svg') >= 0 && mapJs.indexOf('sm-edge') >= 0, '知识星图代码已上线（星体 + 连线）');
+  const relJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('relations.js') >= 0) || 'js/data/relations.js'))).text();
+  const relCount = (relJs.match(/\['[a-z]+\.[a-z]+',\s*'[a-z]+\.[a-z]+'/g) || []).length;
+  ok(relCount > 100, '知识星图依赖连线数据已上线', relCount + ' 条');
+
   /* 4. 数据规模 */
   let total = 0;
   for (const f of ['syllabus', 'problems-A', 'problems-B', 'problems-C', 'problems-D', 'problems-E',
