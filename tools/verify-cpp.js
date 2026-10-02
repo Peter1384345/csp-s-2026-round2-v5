@@ -42,7 +42,10 @@ function norm(s) {
 function h(s) { let x = 5381, i = s.length; while (i) x = (x * 33) ^ s.charCodeAt(--i); return (x >>> 0).toString(36) + s.length; }
 
 function isCapacity(msg) {
-  return /OCI runtime error|crun|Resource temporarily unavailable|timeout|Service Unavailable|429|502|503|504/i.test(String(msg || ''));
+  // 只匹配明确的基础设施故障签名。
+  // 注意：不要在这里写裸数字（429/502/503/504）或 timeouts 字样——
+  // 题目输出本身就是长数字串，会误命中而把正常结果判成「服务繁忙」。
+  return /OCI runtime error|crun:|Resource temporarily unavailable|Service Unavailable|Gateway Time-?out|Internal Server Error/i.test(String(msg || ''));
 }
 
 async function compileAndRun(code, stdin, attempt = 0) {
