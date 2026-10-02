@@ -13,6 +13,7 @@ const vm = require('vm');
 const ROOT = path.join(__dirname, '..');
 const CACHE_FILE = path.join(__dirname, '.cppverify.json');
 const force = process.argv.includes('--force');
+const firstOnly = process.argv.includes('--first');
 const onlyArg = process.argv.find(a => a.startsWith('--only'));
 const only = onlyArg ? (onlyArg.split('=')[1] || '').split(',').filter(Boolean) : null;
 
@@ -21,7 +22,8 @@ const win = {}; win.window = win;
 const ctx = vm.createContext(win);
 ['js/data/syllabus.js', 'js/data/problems-A.js', 'js/data/problems-B.js', 'js/data/problems-C.js',
   'js/data/problems-D.js', 'js/data/problems-E.js',
-  'js/data/problems-F.js', 'js/data/problems-G.js', 'js/data/problems-H.js'].forEach(f => {
+  'js/data/problems-F.js', 'js/data/problems-G.js', 'js/data/problems-H.js',
+  'js/data/problems-I.js'].forEach(f => {
     try { vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f }); }
     catch (e) { console.log(`⚠ 跳过 ${f}: ${e.message.split('\n')[0]}`); }
   });
@@ -54,17 +56,30 @@ async function compileAndRun(code, stdin, attempt = 0) {
     const j = await r.json();
     const cerr = (j.compiler_error || '').trim();
     const perr = (j.program_error || '').trim();
-    // 编译服务本身容量不足 → 重试，不能当作 CE/RE
-    if (isCapacity(cerr) || isCapacity(perr)) {
+    const pmsg = (j.program_message || '').trim();
+    const out = j.program_output || '';
+
+    // 1) 编译服务自身容量不足 → 重试（不能当作 CE/RE）
+    if (isCapacity(cerr) || isCapacity(perr) || isCapacity(pmsg)) {
       if (attempt < 6) {
         await new Promise(ok => setTimeout(ok, 2000 * (attempt + 1)));
         return compileAndRun(code, stdin, attempt + 1);
       }
-      return { verdict: 'NETERR', error: '编译服务容量不足: ' + (cerr || perr).slice(0, 120) };
+      return { verdict: 'NETERR', error: '编译服务容量不足: ' + (cerr || perr || pmsg).slice(0, 120) };
     }
+    // 2) 真的编译失败
     if (cerr) return { verdict: 'CE', error: cerr.slice(0, 500) };
-    if (j.status !== 0 && j.status != null) return { verdict: 'RE', error: String(perr || j.program_message || '').slice(0, 300) };
-    return { verdict: 'OK', output: j.program_output || '' };
+    // 3) 有输出就以输出为准（status 字段语义在不同 Wandbox 版本下不一致，不做判定依据）
+    if (out !== '') {
+      return { verdict: 'OK', output: out, warn: (j.status !== 0 && j.status != null) ? 'status=' + j.status : null };
+    }
+    // 4) 空输出：可能是程序本来就无输出，也可能是服务异常
+    if (perr) return { verdict: 'RE', error: perr.slice(0, 300) };
+    if (attempt < 3) {
+      await new Promise(ok => setTimeout(ok, 1500 * (attempt + 1)));
+      return compileAndRun(code, stdin, attempt + 1);
+    }
+    return { verdict: 'OK', output: '', warn: '空输出 status=' + j.status };
   } catch (e) {
     if (attempt < 6) {
       await new Promise(ok => setTimeout(ok, 2000 * (attempt + 1)));
@@ -81,11 +96,16 @@ async function main() {
   const failures = [];
 
   const tasks = [];
-  list.forEach(p => p.tests.forEach((t, i) => tasks.push({ p, t, i })));
+  list.forEach(p => p.tests.forEach((t, i) => {
+    if (firstOnly && i > 0) return;      // --first：每题只验证第 1 个测试点
+    tasks.push({ p, t, i });
+  }));
 
   let idx = 0;
+  let consecutiveNet = 0;
   async function worker() {
     while (idx < tasks.length) {
+      if (consecutiveNet >= 12) return;   // 服务持续不可用则提前退出
       const job = tasks[idx++];
       const key = h(job.p.std.code) + '|' + h(job.t.input);
       let res = cache[key];
@@ -93,7 +113,8 @@ async function main() {
       else {
         res = await compileAndRun(job.p.std.code, job.t.input);
         cache[key] = res;
-        if ((pass + fail) % 10 === 0) saveCache();
+        saveCache();
+        if (res.verdict === 'NETERR') consecutiveNet++; else consecutiveNet = 0;
       }
       if (res.verdict === 'NETERR') { net++; failures.push(`${job.p.id} #${job.i + 1} 网络失败: ${res.error}`); continue; }
       if (res.verdict !== 'OK') { fail++; failures.push(`${job.p.id} #${job.i + 1} ${res.verdict}: ${res.error}`); continue; }

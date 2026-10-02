@@ -105,6 +105,10 @@
     var cur = viz.curKey ? state[viz.curKey] : null;
     var inTree = state[viz.treeKey || '_tree'] || (viz.treeKey ? state[viz.treeKey] : null);
     if (!n || !isFinite(n)) return '<div class="empty">缺少节点数 n</div>';
+    /* dist 可能是 0 起下标（长度 n）或 1 起下标（长度 n+1，第 0 位是哑元），
+       这里按长度自适应，避免节点标注错位一格 */
+    var distBase = (isArr(dist) && dist.length === n + 1) ? 1 : 0;
+    function distAt(i) { return isArr(dist) ? dist[i - 1 + distBase] : null; }
     var W = 340, H = 260, cx = W / 2, cy = H / 2 + 6, R = Math.min(110, 34 + n * 8);
     var pos = {};
     for (var i = 1; i <= n; i++) {
@@ -112,7 +116,9 @@
       pos[i] = [cx + R * Math.cos(ang), cy + R * Math.sin(ang)];
     }
     var vis = {};
-    if (dist && isArr(dist)) dist.forEach(function (d, k) { if (d !== -1 && d != null) vis[k] = 1; });
+    if (isArr(dist)) {
+      for (var t = 1; t <= n; t++) { var dv = distAt(t); if (dv !== -1 && dv != null) vis[t] = 1; }
+    }
     if (Array.isArray(inTree)) inTree.forEach(function (e) { vis[e[0]] = 1; vis[e[1]] = 1; });
 
     var s = '<svg class="gsvg" viewBox="0 0 ' + W + ' ' + H + '">';
@@ -133,9 +139,12 @@
       var cls2 = 'gnode' + (cur === i ? ' act' : (vis[i] ? ' vis' : ''));
       s += '<g class="' + cls2 + '" transform="translate(' + pos[i][0].toFixed(1) + ',' + pos[i][1].toFixed(1) + ')">' +
         '<circle r="15"/><text y="1">' + i + '</text></g>';
-      if (dist && isArr(dist) && dist[i - 1] != null) {
-        s += '<text class="gw" x="' + pos[i][0].toFixed(1) + '" y="' + (pos[i][1] + 27).toFixed(1) +
-          '" text-anchor="middle">' + esc(dist[i - 1] === -1 ? '∞' : dist[i - 1]) + '</text>';
+      if (isArr(dist)) {
+        var dv2 = distAt(i);
+        if (dv2 != null) {
+          s += '<text class="gw" x="' + pos[i][0].toFixed(1) + '" y="' + (pos[i][1] + 27).toFixed(1) +
+            '" text-anchor="middle">' + esc(dv2 === -1 ? '∞' : dv2) + '</text>';
+        }
       }
     }
     return s + '</svg>';
