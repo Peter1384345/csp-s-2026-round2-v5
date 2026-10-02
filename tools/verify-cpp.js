@@ -23,7 +23,7 @@ const ctx = vm.createContext(win);
 ['js/data/syllabus.js', 'js/data/problems-A.js', 'js/data/problems-B.js', 'js/data/problems-C.js',
   'js/data/problems-D.js', 'js/data/problems-E.js',
   'js/data/problems-F.js', 'js/data/problems-G.js', 'js/data/problems-H.js',
-  'js/data/problems-I.js'].forEach(f => {
+  'js/data/problems-I.js', 'js/data/problems-J.js'].forEach(f => {
     try { vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f }); }
     catch (e) { console.log(`⚠ 跳过 ${f}: ${e.message.split('\n')[0]}`); }
   });
