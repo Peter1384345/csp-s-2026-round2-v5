@@ -414,7 +414,7 @@
     if (el) el.classList.add('exec');
   };
 
-  /** 随机对拍：造小数据找第一个让我的算法出错的用例 */
+  /** 随机对拍：造小数据找第一个让我的算法出错的用例（整个循环在单个 Worker 内完成） */
   VizCtrl.prototype.fuzz = function () {
     var self = this;
     var gen = this.algo.gen;
@@ -423,39 +423,39 @@
     this.el.verdict.className = 'cmp-verdict';
     this.el.verdict.innerHTML = '<span class="spinner"></span> 正在随机造数据对拍（最多 60 组）…';
 
-    var runOne = function (k, bad, good) {
-      if (k >= 60) {
-        self.el.verdict.className = 'cmp-verdict perfect';
-        self.el.verdict.innerHTML = '<b>🎉 60 组随机数据全部通过</b>' +
-          '<div class="mono-sm mt">没有找到反例。可以试着改小数据范围，或再点一次换一批数据。</div>';
+    global.CSP.runner.fuzz(this.refSrc, this.userSrc, gen, 60).then(function (r) {
+      if (!r || r.error) {
+        self.el.verdict.className = 'cmp-verdict error';
+        self.el.verdict.innerHTML = '<b>对拍未能完成</b><div class="mono-sm mt">' +
+          U.esc((r && r.error) || '未知错误') + '</div>' +
+          '<div class="mono-sm mt">可以先点「▶ 运行并对比」，用当前输入逐步检查。</div>';
         return;
       }
-      var input;
-      try { input = String(new Function('return (' + gen + ')')()(k)); }
-      catch (e) { self.el.verdict.innerHTML = '数据生成器报错：' + U.esc(e.message); return; }
-      if (bad) input = bad;
-      global.CSP.runner.run(self.refSrc, input).then(function (rr) {
-        global.CSP.runner.run(self.userSrc, input).then(function (ur) {
-          var same = ur.ok && global.CSP.trace.norm(rr.answer) === global.CSP.trace.norm(ur.answer);
-          if (!same) { self.fuzzFound(input, rr, ur); return; }
-          self.el.verdict.innerHTML = '<span class="spinner"></span> 对拍中… ' + (k + 1) + '/60 组已通过';
-          runOne(k + 1, null, null);
-        });
-      });
-    };
-    runOne(0);
+      if (!r.found) {
+        self.el.verdict.className = 'cmp-verdict perfect';
+        self.el.verdict.innerHTML = '<b>🎉 ' + r.tried + ' 组随机数据全部通过</b>' +
+          '<div class="mono-sm mt">没有找到反例。可以改一改数据范围再点一次，换一批数据继续找。</div>';
+        return;
+      }
+      self.fuzzFound(r.found);
+    }).catch(function (e) {
+      self.el.verdict.className = 'cmp-verdict error';
+      self.el.verdict.innerHTML = '<b>对拍出错</b><div class="mono-sm mt">' + U.esc(String(e && e.message || e)) + '</div>';
+    });
   };
 
-  VizCtrl.prototype.fuzzFound = function (input, rr, ur) {
+  VizCtrl.prototype.fuzzFound = function (f) {
     var self = this;
     this.el.verdict.className = 'cmp-verdict wrong';
-    this.el.verdict.innerHTML = '<b>🎯 找到反例！</b>' +
-      '<div class="mono-sm mt">输入：<code style="color:#22e6ff">' + U.esc(input.replace(/\n/g, ' ⏎ ')) + '</code></div>' +
-      '<div class="mono-sm">标准答案 <b style="color:#3ddc84">' + U.esc(rr.answer) +
-      '</b> · 我的答案 <b style="color:#ff4d6d">' + U.esc(ur.ok ? ur.answer : (ur.error || '运行失败')) + '</b></div>' +
+    this.el.verdict.innerHTML = '<b>🎯 找到反例！（第 ' + ((f.round || 0) + 1) + ' 组随机数据）</b>' +
+      '<div class="mono-sm mt">输入：<code style="color:#22e6ff">' + U.esc(String(f.input).replace(/\n/g, ' ⏎ ')) + '</code></div>' +
+      '<div class="mono-sm">标准答案 <b style="color:#3ddc84">' + U.esc(f.refAnswer == null ? '(未声明)' : f.refAnswer) +
+      '</b> · 我的答案 <b style="color:#ff4d6d">' +
+      U.esc(f.cause === 'runtime' ? ('运行失败：' + (f.error || '')) : (f.userAnswer == null ? '(未声明)' : f.userAnswer)) +
+      '</b></div>' +
       '<button class="btn btn-sm btn-primary mt" id="vz-loadcase">载入这组数据并逐步对比</button>';
     U.$('#vz-loadcase', this.el.verdict).onclick = function () {
-      self.el.input.value = input;
+      self.el.input.value = f.input;
       self.runCompare();
     };
   };
