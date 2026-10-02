@@ -338,15 +338,38 @@
   }
 
   /* ============================ 知识图谱 ============================== */
+  /* 每个考点关联的题目数量（缓存） */
+  var _kCount = null;
+  function kCount() {
+    if (_kCount) return _kCount;
+    _kCount = {};
+    (global.CSP.problems || []).forEach(function (p) {
+      (p.knowledge || []).forEach(function (k) { _kCount[k] = (_kCount[k] || 0) + 1; });
+    });
+    return _kCount;
+  }
+
+  /* 方法类考点：不配套独立题目，通过站内工具/策略页练习 */
+  var METHOD_POINTS = {
+    'adv.stress': '用题目页的「🎲 随机对拍找错」练',
+    'adv.strategy': '见「模拟赛」页的考场策略速查',
+    'adv.io': '见该知识卡的代码骨架，直接抄进模板',
+    'basic.complexity': '每道题的数据范围都在训练它',
+    'adv.interactive': '交互思维：见该知识卡要点',
+    'adv.offline': '离线处理常与扫描线/差分结合，见相关卡片'
+  };
+
   function viewKnowledge() {
     var store = global.CSP.store, syl = global.CSP.syllabus || [];
     var st = store.stats();
     var cats = {};
     syl.forEach(function (k) { (cats[k.cat] = cats[k.cat] || []).push(k); });
+    var kc = kCount();
+    var withP = syl.filter(function (k) { return kc[k.id]; }).length;
 
     var h = '';
     h += '<div class="crumb"><b>知识图谱</b> · ' + syl.length + ' 个考点 · ' +
-      Object.keys(cats).length + ' 个板块</div>';
+      Object.keys(cats).length + ' 个板块 · ' + withP + ' 个配有练习题目</div>';
 
     h += '<div class="panel mb"><div class="panel-bd">' +
       '<div class="flex flex-wrap" style="gap:10px">' +
@@ -357,7 +380,8 @@
       '<div class="mono-sm">已掌握 <b style="color:#3ddc84">' + st.mastery.mastered + '</b> · ' +
       '待巩固 <b style="color:#ff4d6d">' + store.flaggedKnowledge().length + '</b> · ' +
       '共 ' + syl.length + ' 个考点</div>' +
-      '<div class="mono-sm mt">点击任意卡片查看完整知识卡：定义 / 核心要点 / 复杂度 / 易错点 / 代码骨架</div>' +
+      '<div class="mono-sm mt">全部 ' + syl.length + ' 个考点都有完整知识卡（定义 / 核心要点 / 复杂度 / 易错点 / 代码骨架 / 识别套路）；' +
+      '其中 <b style="color:#22e6ff">' + withP + '</b> 个配有可评测的练习题。</div>' +
       '</div></div></div></div>';
 
     h += '<div class="panel mb"><div class="panel-bd">' +
@@ -366,21 +390,40 @@
       '<span class="kstate ks-learning">复习中</span> ' +
       '<span class="kstate ks-mastered">已掌握</span> ' +
       '<span class="kstate ks-flagged">待巩固（做错题自动标记）</span>' +
+      '<span class="mono-sm" style="margin-left:14px">只看：</span>' +
+      '<span class="chip' + (knowFilter === 'all' ? ' on' : '') + '" data-kf="all">全部</span>' +
+      '<span class="chip' + (knowFilter === 'flagged' ? ' on' : '') + '" data-kf="flagged">待巩固</span>' +
+      '<span class="chip' + (knowFilter === 'cardonly' ? ' on' : '') + '" data-kf="cardonly">仅知识卡（无题目）</span>' +
+      '<span class="chip' + (knowFilter === 'hasprob' ? ' on' : '') + '" data-kf="hasprob">有题目</span>' +
       '</div></div>';
 
+    var anyShown = false;
     Object.keys(cats).forEach(function (c) {
+      var list = cats[c].filter(function (k) {
+        if (knowFilter === 'flagged') return store.kstate(k.id).state === 'flagged';
+        if (knowFilter === 'cardonly') return !kCount()[k.id];
+        if (knowFilter === 'hasprob') return !!kCount()[k.id];
+        return true;
+      });
+      if (!list.length) return;
+      anyShown = true;
+      var n = list.filter(function (k) { return kCount()[k.id]; }).length;
       h += '<div class="panel mb"><div class="panel-hd"><span class="dot"></span>' + U.esc(c) +
-        '<span class="more">' + cats[c].length + ' 个考点</span></div><div class="panel-bd">' +
-        '<div class="kcards">' + cats[c].map(kcardMini).join('') + '</div></div></div>';
+        '<span class="more">' + list.length + ' 个考点 · ' + n + ' 个配套题目</span></div><div class="panel-bd">' +
+        '<div class="kcards">' + list.map(kcardMini).join('') + '</div></div></div>';
     });
+    if (!anyShown) h += '<div class="panel"><div class="empty">没有符合条件的考点</div></div>';
     return h;
   }
+  var knowFilter = 'all';
 
   function kcardMini(k) {
     var store = global.CSP.store;
     var st = store.kstate(k.id);
     var card = (global.CSP.cards || {})[k.id];
+    var n = kCount()[k.id] || 0;
     var cls = st.state === 'mastered' ? ' mastered' : st.state === 'flagged' ? ' flagged' : st.state === 'learning' ? ' learning' : '';
+    var method = METHOD_POINTS[k.id];
     return '<div class="kcard' + cls + '" onclick="location.hash=\'#/knowledge/' + k.id + '\'">' +
       '<div class="kc-cat">' + U.esc(k.cat) + ' · Lv' + k.level + '</div>' +
       '<div class="kc-name">' + U.esc(k.name) + '</div>' +
@@ -390,8 +433,11 @@
       (st.state === 'learning' ? '<span class="kstate ks-learning">复习中</span>' : '') +
       (st.state === 'mastered' ? '<span class="kstate ks-mastered">已掌握</span>' : '') +
       (st.state === 'flagged' ? '<span class="kstate ks-flagged">待巩固</span>' : '') +
+      (n ? '<span class="kstate" style="color:#22e6ff;background:rgba(34,230,255,.12)">' + n + ' 题</span>' : '') +
       (st.wrong ? '<span class="kc-wrong">错 ' + st.wrong + ' 次</span>' : '') +
-      '</div></div>';
+      '</div>' +
+      (!n && method ? '<div class="mono-sm" style="margin-top:6px;font-size:10.5px">' + U.esc(method) + '</div>' : '') +
+      '</div>';
   }
 
   function viewKnowledgeCard(kid) {
@@ -404,7 +450,10 @@
   }
 
   function mountKnowledge(kid) {
-    if (kid) global.CSP.views.bindKmark(U.$('#kcard-host'), kid);
+    if (kid) { global.CSP.views.bindKmark(U.$('#kcard-host'), kid); return; }
+    U.$$('[data-kf]').forEach(function (c) {
+      c.onclick = function () { knowFilter = c.getAttribute('data-kf'); render(); };
+    });
   }
 
   /* ============================ 记录 ================================== */
@@ -602,16 +651,25 @@
       '<h4>4 · 模拟赛</h4><ul><li>4 卷可选，各 4 题、限时 240 分钟，顶部计时条倒计时，结束后记录成绩。</li></ul>' +
       '</div></div></div>';
     h += '<div class="panel mb"><div class="panel-hd"><span class="dot"></span>覆盖范围</div><div class="panel-bd">' +
-      '<div class="mono-sm mb">依据 CCF《NOI 大纲》提高级与 CSP-S 第二轮命题范围整理，' +
-      (global.CSP.syllabus || []).length + ' 个考点分 8 个板块：</div>' +
+      '<div class="mono-sm mb">依据 CCF《NOI 大纲》提高级与 CSP-S 第二轮命题范围整理：' +
+      '<b style="color:#22e6ff">' + (global.CSP.syllabus || []).length + '</b> 个考点、8 个板块，' +
+      '<b style="color:#22e6ff">' + (global.CSP.problems || []).length + '</b> 道可评测题（每题 5 个隐藏测试点）、' +
+      '<b style="color:#22e6ff">' + Object.keys(global.CSP.cards || {}).length + '</b> 张知识卡。' +
+      '所有考点都有完整知识卡；每个考点卡片右下角标出配套题目数量，没有独立题目的方法类考点会在卡片上给出练习方式。</div>' +
       (function () {
-        var cats = {};
-        (global.CSP.syllabus || []).forEach(function (k) { (cats[k.cat] = cats[k.cat] || []).push(k.name); });
+        var cats = {}, kc = kCount();
+        (global.CSP.syllabus || []).forEach(function (k) {
+          cats[k.cat] = cats[k.cat] || { n: 0, withP: 0, names: [] };
+          cats[k.cat].n++;
+          cats[k.cat].names.push(k.name);
+          if (kc[k.id]) cats[k.cat].withP++;
+        });
         return Object.keys(cats).map(function (c) {
+          var v = cats[c];
           return '<div class="mb"><div style="font-family:var(--mono);font-size:12.5px;color:#22e6ff">' + U.esc(c) +
-            '<span class="mono-sm">（' + cats[c].length + '）</span></div>' +
+            '<span class="mono-sm">（' + v.n + ' 个考点，' + v.withP + ' 个有题目）</span></div>' +
             '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">' +
-            cats[c].map(function (n) { return '<span class="chip">' + U.esc(n) + '</span>'; }).join('') + '</div></div>';
+            v.names.map(function (n) { return '<span class="chip">' + U.esc(n) + '</span>'; }).join('') + '</div></div>';
         }).join('');
       })() +
       '</div></div>';
