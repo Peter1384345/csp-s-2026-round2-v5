@@ -178,17 +178,19 @@
       saveCache();
       var score = cases.reduce(function (s, c) { return s + (c.score || 0); }, 0);
       var passed = cases.filter(function (c) { return c.verdict === 'AC'; }).length;
+      var serviceErrors = cases.filter(function (c) { return c.verdict === 'ERR'; }).length;
       var verdict;
       if (compileFail) verdict = 'CE';
       else if (passed === total) verdict = 'AC';
+      else if (serviceErrors > 0) verdict = 'ERR';          // 服务繁忙 ≠ 用户做错
       else if (passed === 0) {
         verdict = cases.some(function (c) { return c.verdict === 'RE'; }) ? 'RE'
-          : cases.some(function (c) { return c.verdict === 'TLE'; }) ? 'TLE'
-            : cases.some(function (c) { return c.verdict === 'ERR'; }) ? 'ERR' : 'WA';
+          : cases.some(function (c) { return c.verdict === 'TLE'; }) ? 'TLE' : 'WA';
       } else verdict = 'WA';
       return {
         verdict: verdict, score: score, passed: passed, total: total,
-        cases: cases, compilerError: compileFail, ms: Date.now() - t0, maxCaseMs: maxMs
+        cases: cases, compilerError: compileFail, ms: Date.now() - t0,
+        maxCaseMs: maxMs, serviceErrors: serviceErrors
       };
     });
   }

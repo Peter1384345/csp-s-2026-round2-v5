@@ -125,7 +125,7 @@ async function main() {
       process.stdout.write(`\r  进度 ${pass + fail + net}/${tasks.length}  通过 ${pass}  失败 ${fail}  `);
     }
   }
-  await Promise.all([worker(), worker()]);
+  await Promise.all([worker(), worker(), worker(), worker(), worker(), worker()]);
   saveCache();
 
   console.log('\n' + '='.repeat(72));

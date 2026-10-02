@@ -673,8 +673,48 @@
       });
     };
 
+    function caseRows(cases) {
+      return '<div style="max-height:260px;overflow:auto">' + cases.map(function (c) {
+        var extra = '';
+        if (c.verdict === 'WA') {
+          var d = global.CSP.trace.tokenDiff(c.expected, c.output);
+          extra = '<span class="mono-sm">' + (d.bad.length ?
+            '首个不同的数：期望 <code style="color:#3ddc84">' + U.esc(String(d.bad[0].expected)) +
+            '</code>，实际 <code style="color:#ff4d6d">' + U.esc(String(d.bad[0].actual)) + '</code>' : '') + '</span>';
+        } else if (c.verdict === 'RE' || c.verdict === 'TLE') {
+          extra = '<span class="mono-sm" style="color:#ff5ec4">' + U.esc(String(c.error || '').slice(0, 80)) + '</span>';
+        } else if (c.verdict === 'ERR') {
+          extra = '<span class="mono-sm" style="color:#8ba1bd">评测服务繁忙，未完成</span>';
+        }
+        return '<div class="res-row"><span class="tid">#' + (c.i + 1) + '</span>' +
+          '<span class="' + U.scoreClass(c.verdict) + '">' + c.verdict + '</span>' +
+          '<span class="mono-sm">' + (c.ms || 0) + 'ms</span>' + extra +
+          '<span class="score">' + (c.score || 0) + ' 分</span></div>';
+      }).join('') + '</div>';
+    }
+
     function finishJudge(r) {
       var ok = r.verdict === 'AC';
+      var rowsHtml = caseRows(r.cases);
+
+      /* 公共评测服务容量不足 → 不当成用户做错：不记错题、不标红知识点 */
+      if ((r.serviceErrors || 0) > 0) {
+        var box0 = U.$('#pv-final');
+        U.$('#pv-rows').innerHTML = '';
+        if (box0) box0.innerHTML =
+          '<div class="verdict bad"><span class="big v-ERR">服务繁忙</span>' +
+          '<span>' + r.serviceErrors + ' / ' + r.total + ' 个测试点因公共编译服务（Wandbox）容量不足未能完成</span></div>' +
+          '<div class="mono-sm mb">已完成 ' + r.passed + ' / ' + r.total + ' 个测试点，本次得分 ' + r.score +
+          ' 分。<b>本次结果不计入错题本，也不会把知识点标为待巩固</b>——这不是你的代码的问题。</div>' +
+          '<button class="btn btn-primary btn-sm" id="pv-retry">重新评测</button>' + rowsHtml;
+        btn.disabled = false;
+        btn.textContent = '🚀 提交评测';
+        var rb = U.$('#pv-retry');
+        if (rb) rb.onclick = function () { U.$('#pv-submit').click(); };
+        U.toast('评测服务繁忙，本次不计入成绩，请稍后重试', 'err', 3600);
+        return;
+      }
+
       var h = '<div class="verdict ' + (ok ? 'ok' : 'bad') + '">' +
         '<span class="big ' + U.scoreClass(r.verdict) + '">' + r.verdict + '</span>' +
         '<span>' + r.score + ' / 100 分 · 通过 ' + r.passed + '/' + r.total + ' 个测试点 · 用时 ' + (r.ms / 1000).toFixed(1) + 's</span></div>';
@@ -684,22 +724,7 @@
         h += '<div class="prob-section"><h3>编译错误</h3><div class="code-block" style="color:#ffc4d1">' +
           U.esc(r.compilerError) + '</div></div>';
       }
-      // 单元结果（编译错误时也展示）
-      h += '<div style="max-height:260px;overflow:auto">' + r.cases.map(function (c) {
-        var extra = '';
-        if (c.verdict === 'WA') {
-          var d = global.CSP.trace.tokenDiff(c.expected, c.output);
-          extra = '<span class="mono-sm">' + (d.bad.length ?
-            '首个不同的数：期望 <code style="color:#3ddc84">' + U.esc(String(d.bad[0].expected)) +
-            '</code>，实际 <code style="color:#ff4d6d">' + U.esc(String(d.bad[0].actual)) + '</code>' : '') + '</span>';
-        } else if (c.verdict === 'RE' || c.verdict === 'TLE') {
-          extra = '<span class="mono-sm" style="color:#ff5ec4">' + U.esc(String(c.error || '').slice(0, 80)) + '</span>';
-        }
-        return '<div class="res-row"><span class="tid">#' + (c.i + 1) + '</span>' +
-          '<span class="' + U.scoreClass(c.verdict) + '">' + c.verdict + '</span>' +
-          '<span class="mono-sm">' + (c.ms || 0) + 'ms</span>' + extra +
-          '<span class="score">' + (c.score || 0) + ' 分</span></div>';
-      }).join('') + '</div>';
+      h += rowsHtml;
 
       if (!ok) {
         h += '<div class="flaged-box mt"><div class="t">// 已自动标记待巩固的知识点</div>' +
