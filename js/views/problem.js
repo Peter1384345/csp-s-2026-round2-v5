@@ -147,7 +147,10 @@
     this.host.innerHTML = [
       '<div class="viz-ctl">',
       '  <span class="mono-sm">输入数据</span>',
-      '  <input id="vz-input" class="viz-input" style="flex:1;min-width:180px;height:30px;background:#070d18;border:1px solid #1b2a41;border-radius:6px;color:#d7e3f4;font-family:var(--mono);font-size:12px;padding:0 10px" value="' + U.esc(this.input).replace(/"/g, '&quot;') + '">',
+      '  <textarea id="vz-input" class="viz-input" rows="2" spellcheck="false" wrap="off" ',
+      '    style="flex:1;min-width:200px;background:#070d18;border:1px solid #1b2a41;border-radius:6px;color:#d7e3f4;font-family:var(--mono);font-size:12px;padding:6px 10px;resize:vertical;outline:none">',
+      U.esc(this.input),
+      '</textarea>',
       '  <button class="btn btn-sm" id="vz-usesample">用样例</button>',
       '  <button class="btn btn-sm btn-primary" id="vz-run">▶ 运行并对比</button>',
       '  <button class="btn btn-sm" id="vz-fuzz">🎲 随机对拍找错</button>',
