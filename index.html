@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSP-S 2026 第二轮 · 在线刷题与算法可视化</title>
+<meta name="description" content="CSP-S 2026 第二轮备考：在线答题、实时评测、知识点卡片、算法逐步可视化与「我的算法 vs 标准算法」对比。">
+<link rel="stylesheet" href="css/theme.css?v=4">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230a0f1c'/><text x='16' y='23' font-size='19' font-family='monospace' font-weight='bold' fill='%2322e6ff' text-anchor='middle'>C</text></svg>">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo">
+    <span class="logo-mark">CS</span>
+    <span class="logo-text">CSP-S<b>2026</b> <i>ROUND 2 · 备考控制台</i></span>
+  </div>
+  <div class="nav-links" id="nav"></div>
+  <div class="nav-right">
+    <div class="nav-search">
+      <span class="ic">🔍</span>
+      <input id="topSearch" placeholder="搜索题目 / 知识点…" autocomplete="off">
+    </div>
+    <div id="loginArea"></div>
+  </div>
+</nav>
+
+<div class="mockbar hidden" id="mockbar">
+  <span>⏱ 模拟赛进行中</span>
+  <span class="clock" id="mocktime">4:00:00</span>
+  <div class="mock-probs" id="mockprobs" style="margin-left:auto;display:flex;gap:6px"></div>
+</div>
+
+<div class="container" id="app">
+  <div class="empty">正在加载题库与知识卡…</div>
+</div>
+
+<!-- 数据层 -->
+<script src="js/data/syllabus.js?v=4"></script>
+<script src="js/data/problems-A.js?v=4"></script>
+<script src="js/data/problems-B.js?v=4"></script>
+<script src="js/data/problems-C.js?v=4"></script>
+<script src="js/data/problems-D.js?v=4"></script>
+<script src="js/data/problems-E.js?v=4"></script>
+<script src="js/data/problems-F.js?v=4"></script>
+<script src="js/data/problems-G.js?v=4"></script>
+<script src="js/data/problems-H.js?v=4"></script>
+<script src="js/data/cards-A.js?v=4"></script>
+<script src="js/data/cards-B.js?v=4"></script>
+<script src="js/data/cards-C.js?v=4"></script>
+
+<!-- 核心引擎 -->
+<script src="js/core/trace.js?v=4"></script>
+<script src="js/core/render.js?v=4"></script>
+<script src="js/core/ui.js?v=4"></script>
+<script src="js/core/store.js?v=4"></script>
+<script src="js/core/judge.js?v=4"></script>
+<script src="js/core/runner.js?v=4"></script>
+<script src="js/core/editor.js?v=4"></script>
+
+<!-- 视图与路由 -->
+<script src="js/views/problem.js?v=4"></script>
+<script src="js/app.js?v=4"></script>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+# 工具产物
+_tmp/
+_t.js
+tools/.cppverify.json
+node_modules/
+*.log
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
