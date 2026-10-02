@@ -359,63 +359,10 @@
     'adv.offline': '离线处理常与扫描线/差分结合，见相关卡片'
   };
 
+  /* 知识图谱：默认渲染「知识星图」（一整张法阵式星图），可切换回卡片列表 */
   function viewKnowledge() {
-    var store = global.CSP.store, syl = global.CSP.syllabus || [];
-    var st = store.stats();
-    var cats = {};
-    syl.forEach(function (k) { (cats[k.cat] = cats[k.cat] || []).push(k); });
-    var kc = kCount();
-    var withP = syl.filter(function (k) { return kc[k.id]; }).length;
-
-    var h = '';
-    h += '<div class="crumb"><b>知识图谱</b> · ' + syl.length + ' 个考点 · ' +
-      Object.keys(cats).length + ' 个板块 · ' + withP + ' 个配有练习题目</div>';
-
-    h += '<div class="panel mb"><div class="panel-bd">' +
-      '<div class="flex flex-wrap" style="gap:10px">' +
-      '<div class="ring" style="--p:' + st.mastery.pct + '"><b>' + st.mastery.pct + '%</b></div>' +
-      '<div style="flex:1;min-width:220px">' +
-      '<div class="mono-sm">整体掌握度</div>' +
-      '<div class="bar mt mb"><i style="width:' + st.mastery.pct + '%"></i></div>' +
-      '<div class="mono-sm">已掌握 <b style="color:#3ddc84">' + st.mastery.mastered + '</b> · ' +
-      '待巩固 <b style="color:#ff4d6d">' + store.flaggedKnowledge().length + '</b> · ' +
-      '共 ' + syl.length + ' 个考点</div>' +
-      '<div class="mono-sm mt">全部 ' + syl.length + ' 个考点都有完整知识卡（定义 / 核心要点 / 复杂度 / 易错点 / 代码骨架 / 识别套路）；' +
-      '其中 <b style="color:#22e6ff">' + withP + '</b> 个配有可评测的练习题。</div>' +
-      '</div></div></div></div>';
-
-    h += '<div class="panel mb"><div class="panel-bd">' +
-      '<span class="mono-sm">图例：</span>' +
-      '<span class="kstate ks-none">未学习</span> ' +
-      '<span class="kstate ks-learning">复习中</span> ' +
-      '<span class="kstate ks-mastered">已掌握</span> ' +
-      '<span class="kstate ks-flagged">待巩固（做错题自动标记）</span>' +
-      '<span class="mono-sm" style="margin-left:14px">只看：</span>' +
-      '<span class="chip' + (knowFilter === 'all' ? ' on' : '') + '" data-kf="all">全部</span>' +
-      '<span class="chip' + (knowFilter === 'flagged' ? ' on' : '') + '" data-kf="flagged">待巩固</span>' +
-      '<span class="chip' + (knowFilter === 'cardonly' ? ' on' : '') + '" data-kf="cardonly">仅知识卡（无题目）</span>' +
-      '<span class="chip' + (knowFilter === 'hasprob' ? ' on' : '') + '" data-kf="hasprob">有题目</span>' +
-      '</div></div>';
-
-    var anyShown = false;
-    Object.keys(cats).forEach(function (c) {
-      var list = cats[c].filter(function (k) {
-        if (knowFilter === 'flagged') return store.kstate(k.id).state === 'flagged';
-        if (knowFilter === 'cardonly') return !kCount()[k.id];
-        if (knowFilter === 'hasprob') return !!kCount()[k.id];
-        return true;
-      });
-      if (!list.length) return;
-      anyShown = true;
-      var n = list.filter(function (k) { return kCount()[k.id]; }).length;
-      h += '<div class="panel mb"><div class="panel-hd"><span class="dot"></span>' + U.esc(c) +
-        '<span class="more">' + list.length + ' 个考点 · ' + n + ' 个配套题目</span></div><div class="panel-bd">' +
-        '<div class="kcards">' + list.map(kcardMini).join('') + '</div></div></div>';
-    });
-    if (!anyShown) h += '<div class="panel"><div class="empty">没有符合条件的考点</div></div>';
-    return h;
+    return global.CSP.views.starmap();
   }
-  var knowFilter = 'all';
 
   function kcardMini(k) {
     var store = global.CSP.store;
@@ -451,9 +398,7 @@
 
   function mountKnowledge(kid) {
     if (kid) { global.CSP.views.bindKmark(U.$('#kcard-host'), kid); return; }
-    U.$$('[data-kf]').forEach(function (c) {
-      c.onclick = function () { knowFilter = c.getAttribute('data-kf'); render(); };
-    });
+    global.CSP.views.mountStarmap();
   }
 
   /* ============================ 记录 ================================== */
@@ -648,6 +593,13 @@
       '<li>「我的算法」用 JavaScript 写，用 <code>T.step(状态, 说明)</code> 记录每一步，用 <code>T.answer(答案)</code> 声明答案。</li>' +
       '<li>播放时两边会同步高亮当前执行的代码行；<b>第一处状态分歧会自动标红</b>，并指出是哪个变量先不对。</li>' +
       '<li>点「🎲 随机对拍找错」会自动造 60 组小数据，找出第一个让你的算法出错的用例，一键载入并逐步对比。</li></ul>' +
+      '<h4>3 · 知识星图（一整张法阵式知识图谱）</h4><ul>' +
+      '<li>「知识图谱」页把所有考点画成<b>一整张星图</b>：每颗星是一个考点，按 8 个板块分布在同心圆环上，外圈是考点更多的板块。</li>' +
+      '<li>星与星之间有<b>真实含义的连线</b>：紫色实线 = 学习先后/依赖关系（114 条人工梳理，如「单调队列 → 单调队列优化 DP」），青色虚线 = 同题共现（同一道题涉及的考点）。</li>' +
+      '<li>星体颜色 = 掌握状态（红=待巩固、绿=已掌握、黄=复习中、灰=未学习），<b>星越大 = 配套题目越多</b>。</li>' +
+      '<li>悬停任意一颗星会高亮它的全部邻居与连线；点击星星在右侧展开完整知识卡，并可一键标记掌握 / 待巩固。</li>' +
+      '<li>支持滚轮缩放、拖拽平移、按板块与状态筛选、搜索「线段树」回车即可定位到那颗星。</li>' +
+      '<li>想要传统列表就切到「卡片列表」视图，两种视角随时切换。</li></ul>' +
       '<h4>4 · 模拟赛</h4><ul><li>4 卷可选，各 4 题、限时 240 分钟，顶部计时条倒计时，结束后记录成绩。</li></ul>' +
       '</div></div></div>';
     h += '<div class="panel mb"><div class="panel-hd"><span class="dot"></span>覆盖范围</div><div class="panel-bd">' +

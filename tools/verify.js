@@ -45,6 +45,7 @@ ctx.Math = Math; ctx.JSON = JSON; ctx.Date = Date; ctx.Number = Number;
 
 const DATA_FILES = [
   'js/data/syllabus.js',
+  'js/data/relations.js',
   'js/data/problems-A.js', 'js/data/problems-B.js', 'js/data/problems-C.js',
   'js/data/problems-D.js', 'js/data/problems-E.js',
   'js/data/problems-F.js', 'js/data/problems-G.js', 'js/data/problems-H.js',
@@ -223,6 +224,32 @@ const covered = new Set();
 problems.forEach(p => (p.knowledge || []).forEach(k => covered.add(k)));
 const uncovered = syllabus.filter(k => !covered.has(k.id));
 if (uncovered.length) warns.push(`以下考点没有对应题目(${uncovered.length}): ${uncovered.map(k => k.name).join(', ')}`);
+
+/* ---------------- 5. 知识星图连线数据 ---------------- */
+(function () {
+  const prereq = win.CSP.prereq || [];
+  const seen = {};
+  let badId = 0, self = 0, dup = 0;
+  prereq.forEach(function (e) {
+    if (!Array.isArray(e) || e.length < 2) { badId++; return; }
+    if (!ids.has(e[0])) { errors.push('relations: 前置考点不存在 ' + e[0]); badId++; }
+    if (!ids.has(e[1])) { errors.push('relations: 后续考点不存在 ' + e[1]); badId++; }
+    if (e[0] === e[1]) { errors.push('relations: 自环 ' + e[0]); self++; }
+    const k = e[0] < e[1] ? e[0] + '|' + e[1] : e[1] + '|' + e[0];
+    if (seen[k]) { warns.push('relations: 重复连线 ' + k); dup++; }
+    seen[k] = 1;
+  });
+  console.log('\n知识星图：');
+  console.log(`  依赖连线: ${prereq.length}   唯一配对: ${Object.keys(seen).length}   非法 id: ${badId}   自环: ${self}   重复: ${dup}`);
+  /* 孤星检查：既没有依赖连线、也没有任何题目共现的考点 */
+  const linked = {};
+  Object.keys(seen).forEach(function (k) { const p = k.split('|'); linked[p[0]] = 1; linked[p[1]] = 1; });
+  problems.forEach(function (p) {
+    (p.knowledge || []).forEach(function (k) { linked[k] = 1; });
+  });
+  const lonely = syllabus.filter(function (k) { return !linked[k.id]; });
+  if (lonely.length) warns.push(`星图中孤立无连线的考点(${lonely.length}): ${lonely.map(k => k.name).join(', ')}`);
+})();
 
 /* ---------------- 输出 ---------------- */
 console.log('\n逐题结果：');
