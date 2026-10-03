@@ -34,8 +34,14 @@ function Test-WattRunning {
 
 function Test-GitHubReachable {
   # 用 git ls-remote 判定：它走的正是 push 的同一条链路，比 ping/TCP 更准
-  $out = & git ls-remote --heads $Remote 2>&1
-  return ($LASTEXITCODE -eq 0)
+  # 经 cmd 重定向输出，避免 PowerShell 5.1 把 git 的 stderr 当成 ErrorRecord 抛错
+  $tmp = [IO.Path]::GetTempFileName()
+  try {
+    & cmd /c "git ls-remote --heads $Remote > `"$tmp`" 2>&1" | Out-Null
+    return ($LASTEXITCODE -eq 0)
+  } finally {
+    Remove-Item $tmp -Force -ErrorAction SilentlyContinue
+  }
 }
 
 Write-Host '=== 1. Watt Toolkit 状态 ===' -ForegroundColor Cyan
@@ -81,10 +87,16 @@ if (-not $ok) {
 if ($WaitOnly) { Write-Host "`n✅ 已连通（-WaitOnly，不推送）" -ForegroundColor Green; exit 0 }
 
 Write-Host "`n=== 3. 推送到 $Remote/$Branch ===" -ForegroundColor Cyan
-git push $Remote $Branch
-if ($LASTEXITCODE -eq 0) {
+$tmpOut = [IO.Path]::GetTempFileName()
+& cmd /c "git push $Remote $Branch > `"$tmpOut`" 2>&1" | Out-Null
+$pushCode = $LASTEXITCODE
+Get-Content $tmpOut -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  $_" }
+Remove-Item $tmpOut -Force -ErrorAction SilentlyContinue
+
+if ($pushCode -eq 0) {
   Write-Host "`n✅ 推送成功" -ForegroundColor Green
   git status -sb | Select-Object -First 1
+  exit 0
 } else {
   Write-Host "`n❌ 推送失败（连通性已确认，可能是权限或冲突）" -ForegroundColor Red
   exit 1
