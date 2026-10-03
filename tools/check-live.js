@@ -54,6 +54,15 @@ const ROOT = path.join(__dirname, '..');
   /* 3b. 知识星图已上线 */
   const mapJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('starmap.js') >= 0) || 'js/views/starmap.js'))).text();
   ok(mapJs.indexOf('sm-svg') >= 0 && mapJs.indexOf('sm-edge') >= 0, '知识星图代码已上线（星体 + 连线）');
+
+  /* 3c. 性能修复已上线（曾因 129 个 SVG filter + 620 个星尘节点严重掉帧） */
+  const cssJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('theme.css') >= 0) || 'css/theme.css'))).text();
+  ok(!/\.star\s+\.sm-body\s*\{[^}]*filter/.test(cssJs), '星体不再使用批量 drop-shadow（卡顿主因已修复）');
+  ok((cssJs.match(/radial-gradient\(1[.\d]*px/g) || []).length >= 8, '静态星尘已改为 CSS 星野背景（0 DOM 节点）');
+  ok(cssJs.indexOf('sm-neb-breathe') >= 0, '星云改为只做透明度呼吸（不做整块位移重绘）');
+  ok(mapJs.indexOf('sm-dustfield') < 0, 'SVG 内已无 620 个静态星尘节点');
+  ok((mapJs.match(/class="sm-neb"/g) || []).length <= 2, '星云数量收敛到 2 团');
+
   const relJs = await (await fetch(BASE + (localAssets.find(a => a.indexOf('relations.js') >= 0) || 'js/data/relations.js'))).text();
   const relCount = (relJs.match(/\['[a-z]+\.[a-z]+',\s*'[a-z]+\.[a-z]+'/g) || []).length;
   ok(relCount > 100, '知识星图依赖连线数据已上线', relCount + ' 条');
