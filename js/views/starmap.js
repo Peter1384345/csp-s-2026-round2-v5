@@ -32,16 +32,23 @@
   var POS_KEY = 'csp-s-v5-starmap-pos';
   var MOTION_KEY = 'csp-s-v5-starmap-motion';
 
-  /* 动态效果开关：默认开；系统偏好「减少动态」时默认关 */
+  /* 动态效果开关：默认开；系统偏好「减少动态」或设备较弱时默认关 */
   function motionOn() {
     try {
       var v = localStorage.getItem(MOTION_KEY);
-      if (v === '1') return true;
+      if (v === '1') return true;      // 用户手动开过就以用户为准
       if (v === '0') return false;
     } catch (e) { }
     try {
-      return !(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    } catch (e) { return true; }
+      if (global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    } catch (e) { }
+    try {
+      var nav = global.navigator || {};
+      var cores = nav.hardwareConcurrency || 8;
+      var mem = nav.deviceMemory || 8;
+      if (cores <= 4 || mem <= 4) return false;   // 低配设备默认省电，用户可手动打开
+    } catch (e) { }
+    return true;
   }
   function setMotion(on) {
     try { localStorage.setItem(MOTION_KEY, on ? '1' : '0'); } catch (e) { }
@@ -229,25 +236,19 @@
       '<feMerge><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge></filter>');
     s.push('</defs>');
 
-    /* ---------- 背景：缓慢流动的星云（呼吸 + 漂移） ---------- */
+    /* ---------- 背景：星云（只做透明度呼吸，不做位移 —— 大渐变圆移动会整块重绘） ---------- */
     s.push('<circle cx="' + CX + '" cy="' + CY + '" r="880" fill="url(#sm-nebula)"/>');
     s.push('<g class="sm-nebulae">' +
-      '<circle class="sm-neb" cx="' + (CX - 330) + '" cy="' + (CY - 250) + '" r="430" fill="url(#sm-neb-a)" style="--dur:44s;--dx:60px;--dy:-40px"/>' +
-      '<circle class="sm-neb" cx="' + (CX + 380) + '" cy="' + (CY + 180) + '" r="470" fill="url(#sm-neb-b)" style="--dur:56s;--dx:-70px;--dy:50px;animation-delay:-12s"/>' +
-      '<circle class="sm-neb" cx="' + (CX + 120) + '" cy="' + (CY - 420) + '" r="360" fill="url(#sm-neb-c)" style="--dur:38s;--dx:-50px;--dy:70px;animation-delay:-20s"/>' +
+      '<circle class="sm-neb" cx="' + (CX - 330) + '" cy="' + (CY - 250) + '" r="430" fill="url(#sm-neb-a)" style="--dur:26s"/>' +
+      '<circle class="sm-neb" cx="' + (CX + 360) + '" cy="' + (CY + 200) + '" r="470" fill="url(#sm-neb-b)" style="--dur:34s;animation-delay:-9s"/>' +
       '</g>');
 
-    /* ---------- 星尘：静态底噪 + 会眨眼的高光星 ---------- */
+    /* ---------- 星尘：静态底噪已交给 .sm-stage 的 CSS 背景（0 DOM 节点、不参与重绘），
+                  这里只保留少量会眨眼的「活」星 ---------- */
     var i, seed = 20261031;
     function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
-    var dust = [], twinkle = [];
-    for (i = 0; i < 620; i++) {
-      var dx = rnd() * W, dy = rnd() * H, dr = rnd() * 1.7 + 0.4;
-      dust.push('<circle cx="' + dx.toFixed(0) + '" cy="' + dy.toFixed(0) + '" r="' + dr.toFixed(2) +
-        '" fill="#9fd0ff" opacity="' + (0.1 + rnd() * 0.25).toFixed(2) + '"/>');
-    }
-    s.push('<g class="sm-dustfield">' + dust.join('') + '</g>');
-    for (i = 0; i < 86; i++) {
+    var twinkle = [];
+    for (i = 0; i < 44; i++) {
       var tx = rnd() * W, ty = rnd() * H, tr = rnd() * 2.6 + 1.4;
       twinkle.push('<circle class="sm-dust" cx="' + tx.toFixed(0) + '" cy="' + ty.toFixed(0) +
         '" r="' + tr.toFixed(2) + '" style="--dur:' + (3 + rnd() * 5).toFixed(1) + 's;animation-delay:-' +

@@ -130,17 +130,38 @@ console.log('  动效元素: ' + Object.keys(anim).map(k => k + '=' + anim[k]).j
 if (anim.float !== expected) { console.log(`  ❌ 漂浮层数量 ${anim.float} ≠ 星数 ${expected}`); bad++; }
 if (anim.animMotion !== anim.pulse || anim.mpath !== anim.pulse) { console.log('  ❌ 能量光点与 animateMotion/mpath 数量不匹配'); bad++; }
 if (anim.pulse < 20) { console.log(`  ❌ 能量光点太少 (${anim.pulse})`); bad++; }
-[['星云', anim.nebula, 3], ['流星', anim.meteor, 3], ['星尘闪烁', anim.twinkle, 60], ['核心波纹', anim.wave, 2], ['法阵刻线环', anim.rune, 4]]
+[['星云', anim.nebula, 2], ['流星', anim.meteor, 3], ['星尘闪烁', anim.twinkle, 40], ['核心波纹', anim.wave, 2], ['法阵刻线环', anim.rune, 4]]
   .forEach(function (a) { if (a[1] < a[2]) { console.log(`  ❌ ${a[0]} 元素不足（${a[1]} < ${a[2]}）`); bad++; } });
-if (!bad) console.log('  ✅ 动效层元素齐备（漂浮 / 呼吸 / 能量流动 / 星云 / 流星 / 波纹）');
+if (!bad) console.log('  ✅ 动效层元素齐备（漂浮 / 闪烁 / 能量流动 / 星云 / 流星 / 波纹）');
 
-/* 6b. 动效数量预算：同时动画的元素太多会明显掉帧，这里设一个上限防止以后失控
-   （逐项统计所有带 animation 的元素：漂浮、光晕、星尘、光点、虚线流动、星云、流星、波纹、刻线环） */
-const budget = anim.float + anim.halo + anim.pulse + anim.twinkle + anim.co
+/* 6b. 动效数量预算（只统计真正在动的元素；halo 现在是静态的，不计入） */
+const budget = anim.float + anim.pulse + anim.twinkle + anim.co
   + anim.nebula + anim.meteor + anim.wave + anim.rune;
-console.log(`  同时动画的元素约 ${budget} 个（预算 ≤ 480）`);
-if (budget > 480) { console.log(`  ❌ 动效元素过多 (${budget})，应减少同时动画的数量`); bad++; }
-else console.log('  ✅ 动效开销在预算内（重绘密集的 filter 动画已全部移除）');
+console.log(`  同时动画的元素约 ${budget} 个（预算 ≤ 320）`);
+if (budget > 320) { console.log(`  ❌ 动效元素过多 (${budget})，应减少同时动画的数量`); bad++; }
+else console.log('  ✅ 动效开销在预算内');
+
+/* 6c. 护栏：批量元素上禁止 filter: drop-shadow。
+   SVG 的 filter 会为每个元素单独开辟离屏层并跑一遍模糊；90 个星体同时带 filter
+   曾把页面拖到严重掉帧。这里静态扫描 CSS，防止这个坑被重新踩回来。 */
+(function () {
+  const css = fs.readFileSync(path.join(ROOT, 'css/theme.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const offenders = [];
+  css.split('}').forEach(function (rule) {
+    if (!/filter\s*:\s*drop-shadow/.test(rule)) return;
+    const sel = (rule.split('{')[0] || '').split('\n').pop().trim();
+    if (!/\.(sm-body|sm-pulse|sm-halo|sm-dust|sm-edge|sm-neb|sm-tick|sm-star|star)/.test(sel)) return;
+    if (/:(hover|focus)|\.(hl|dragging|nb)\b/.test(sel)) return;  // 只作用于个别元素的状态样式可以接受
+    offenders.push(sel);
+  });
+  console.log(`  批量 filter 检查: ${offenders.length} 处${offenders.length ? ' → ' + offenders.join(' / ') : ''}`);
+  if (offenders.length) {
+    console.log('  ❌ 批量元素上仍有 filter，会显著掉帧（应改用半透明圆盘或径向渐变）');
+    bad++;
+  } else {
+    console.log('  ✅ 无批量 filter（星体 / 光点 / 连线都不再用 drop-shadow）');
+  }
+})();
 
 /* 7. 每颗星的动效参数是错相的，否则会整片一起闪 */
 const fdels = [...html.matchAll(/--fd:([\d.]+)s;--fdl:(-[\d.]+)s/g)].map(m => +m[2]);

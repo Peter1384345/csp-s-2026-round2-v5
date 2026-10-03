@@ -523,9 +523,33 @@ input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px;
 .sm-layout { display: block; }
 
 .sm-stage-panel { overflow: hidden; }
+/* 静态星尘用 CSS 多层径向渐变铺出来：0 个 DOM 节点、只画一次，
+   也不会随 SVG 每帧一起重绘（原先 620 个 <circle> 会全程参与重绘） */
 .sm-stage {
-  position: relative; background: radial-gradient(ellipse 70% 70% at 50% 50%, #081426 0%, #050a14 62%, #03060d 100%);
+  position: relative;
   cursor: grab; user-select: none; overflow: hidden;
+  background-image:
+    radial-gradient(1.3px 1.3px at 12% 18%, rgba(190,225,255,.95), transparent),
+    radial-gradient(1px 1px at 63% 9%,  rgba(159,208,255,.8),  transparent),
+    radial-gradient(1.6px 1.6px at 84% 34%, rgba(220,240,255,.9), transparent),
+    radial-gradient(1px 1px at 32% 47%, rgba(159,208,255,.75), transparent),
+    radial-gradient(1.2px 1.2px at 71% 66%, rgba(190,225,255,.85), transparent),
+    radial-gradient(1px 1px at 9% 78%,  rgba(159,208,255,.7),  transparent),
+    radial-gradient(1.5px 1.5px at 45% 88%, rgba(220,240,255,.8), transparent),
+    radial-gradient(1px 1px at 92% 82%, rgba(159,208,255,.7),  transparent),
+    radial-gradient(1.2px 1.2px at 24% 61%, rgba(190,225,255,.8), transparent),
+    radial-gradient(1px 1px at 56% 22%, rgba(159,208,255,.72), transparent),
+    radial-gradient(1.4px 1.4px at 78% 51%, rgba(220,240,255,.85), transparent),
+    radial-gradient(1px 1px at 3% 42%,  rgba(159,208,255,.68), transparent),
+    radial-gradient(1.1px 1.1px at 40% 12%, rgba(190,225,255,.8), transparent),
+    radial-gradient(1px 1px at 88% 6%,  rgba(159,208,255,.72), transparent),
+    radial-gradient(ellipse 70% 70% at 50% 50%, #081426 0%, #050a14 62%, #03060d 100%);
+  background-size:
+    247px 233px, 211px 259px, 283px 197px, 227px 271px, 193px 241px, 263px 219px, 239px 283px,
+    201px 227px, 279px 211px, 217px 249px, 251px 229px, 233px 263px, 195px 217px, 269px 239px,
+    cover;
+  background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat,
+    repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat;
 }
 .sm-stage.grabbing { cursor: grabbing; }
 .sm-stage::after {
@@ -623,20 +647,19 @@ svg.focusing .star:not(.hl):not(.nb) { opacity: .18; }
 
 /* ---------- 动态效果：整张星图像活着的宇宙 ---------- */
 
-/* 星尘：高光星眨眼 */
+/* 星尘：只保留少量“活”星眨眼；静态底噪交给 .sm-stage 的 CSS 背景（0 DOM 节点） */
 .sm-dust { fill: #9fd0ff; opacity: .3; animation: sm-twinkle var(--dur, 4.5s) ease-in-out infinite; }
 @keyframes sm-twinkle {
   0%, 100% { opacity: .12; }
   45%      { opacity: .85; }
 }
-.sm-dustfield { opacity: .55; }
 
-/* 星云：缓慢漂移 + 呼吸 */
-.sm-neb { animation: sm-neb-drift var(--dur, 48s) ease-in-out infinite alternate; transform-box: fill-box; }
-@keyframes sm-neb-drift {
-  0%   { transform: translate(0, 0) scale(1); opacity: .75; }
-  50%  { opacity: 1; }
-  100% { transform: translate(var(--dx, 60px), var(--dy, -40px)) scale(1.12); opacity: .8; }
+/* 星云：只做透明度呼吸，不做位移/缩放 —— 大尺寸渐变圆一旦移动，
+   每帧都要重绘整块区域，是隐藏的帧率杀手 */
+.sm-neb { animation: sm-neb-breathe var(--dur, 28s) ease-in-out infinite; }
+@keyframes sm-neb-breathe {
+  0%, 100% { opacity: .62; }
+  50%      { opacity: 1; }
 }
 
 /* 流星：划过 + 淡出 */
@@ -648,8 +671,14 @@ svg.focusing .star:not(.hl):not(.nb) { opacity: .18; }
   100% { transform: translate(var(--travel, 1200px), calc(var(--travel, 1200px) * .42)) rotate(0deg); opacity: 0; }
 }
 
-/* 星星：漂浮（内层，不影响拖动用的外层坐标） */
-.star-float { animation: sm-float var(--fd, 12s) ease-in-out infinite; animation-delay: var(--fdl, 0s); }
+/* 星星：漂浮 + 闪烁合并到同一个元素（两条动画轨道 = 1 个动画元素，而不是 2 个），
+   光晕用半透明圆盘而非 filter: drop-shadow —— SVG 上的 filter 会为每个元素
+   额外开辟离屏层并跑一遍模糊，90 个星体同时带 filter 是上一版卡顿的主因 */
+.star-float {
+  animation: sm-float var(--fd, 12s) ease-in-out infinite,
+             sm-star-twinkle var(--hd, 4s) ease-in-out infinite;
+  animation-delay: var(--fdl, 0s), var(--hdl, 0s);
+}
 @keyframes sm-float {
   0%   { transform: translate(0, 0); }
   25%  { transform: translate(calc(var(--amp, 8px) * .7), calc(var(--amp, 8px) * -1)); }
@@ -657,15 +686,11 @@ svg.focusing .star:not(.hl):not(.nb) { opacity: .18; }
   75%  { transform: translate(calc(var(--amp, 8px) * -.6), var(--amp, 8px)); }
   100% { transform: translate(0, 0); }
 }
-
-/* 星星：呼吸光晕（只动 halo 的透明度 —— 便宜；星体本身用静态辉光，
-   不做 filter 动画，否则 90 个滤镜每帧重绘会明显拖慢） */
-.sm-halo { animation: sm-halo-breathe var(--hd, 4s) ease-in-out infinite; animation-delay: var(--hdl, 0s); }
-@keyframes sm-halo-breathe {
-  0%, 100% { opacity: .08; }
-  50%      { opacity: .3; }
+@keyframes sm-star-twinkle {
+  0%, 100% { opacity: .82; }
+  50%      { opacity: 1; }
 }
-.star .sm-body { filter: drop-shadow(0 0 6px var(--c)); }
+.sm-halo { fill: var(--c); opacity: .17; }
 
 /* 连线：只有虚线（同题共现）跑流动；依赖线保持静态由光点赋予动感，
    避免 114 条线同时重绘 stroke */
@@ -675,12 +700,11 @@ svg.focusing .star:not(.hl):not(.nb) { opacity: .18; }
 /* 沿连线奔跑的能量光点 */
 .sm-pulse {
   fill: var(--pc, #22e6ff); opacity: 0;
-  filter: drop-shadow(0 0 7px var(--pc, #22e6ff));
 }
 svg:not(.sm-nomotion) .sm-pulse { animation: sm-pulse-vis 3.2s ease-in-out infinite; }
 @keyframes sm-pulse-vis {
-  0%, 100% { opacity: .35; r: 3; }
-  50%      { opacity: 1; r: 4.6; }
+  0%, 100% { opacity: .4; r: 3.6; }
+  50%      { opacity: 1; r: 5.4; }
 }
 
 /* 核心：氛围光 + 扩散波纹 */
