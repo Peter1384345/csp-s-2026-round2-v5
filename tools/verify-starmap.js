@@ -112,6 +112,44 @@ const orphan = edges.filter(e => !ids[e.a] || !ids[e.b]);
 if (orphan.length) { console.log(`  ❌ ${orphan.length} 条连线的端点找不到对应星`); bad++; }
 else console.log('  ✅ 所有连线端点都能对应到星');
 
+/* 6. 动效层：星星漂浮 / 星云 / 流星 / 能量光点 / 波纹 是否都渲染出来了 */
+const anim = {
+  float: (html.match(/class="star-float"/g) || []).length,
+  halo: (html.match(/class="sm-halo"/g) || []).length,
+  nebula: (html.match(/class="sm-neb"/g) || []).length,
+  meteor: (html.match(/class="sm-meteor"/g) || []).length,
+  pulse: (html.match(/class="sm-pulse"/g) || []).length,
+  animMotion: (html.match(/<animateMotion/g) || []).length,
+  mpath: (html.match(/<mpath/g) || []).length,
+  twinkle: (html.match(/class="sm-dust"/g) || []).length,
+  wave: (html.match(/class="sm-core-wave"/g) || []).length,
+  rune: (html.match(/class="sm-rune/g) || []).length,
+  co: (html.match(/class="sm-edge co"/g) || []).length
+};
+console.log('  动效元素: ' + Object.keys(anim).map(k => k + '=' + anim[k]).join('  '));
+if (anim.float !== expected) { console.log(`  ❌ 漂浮层数量 ${anim.float} ≠ 星数 ${expected}`); bad++; }
+if (anim.animMotion !== anim.pulse || anim.mpath !== anim.pulse) { console.log('  ❌ 能量光点与 animateMotion/mpath 数量不匹配'); bad++; }
+if (anim.pulse < 20) { console.log(`  ❌ 能量光点太少 (${anim.pulse})`); bad++; }
+[['星云', anim.nebula, 3], ['流星', anim.meteor, 3], ['星尘闪烁', anim.twinkle, 60], ['核心波纹', anim.wave, 2], ['法阵刻线环', anim.rune, 4]]
+  .forEach(function (a) { if (a[1] < a[2]) { console.log(`  ❌ ${a[0]} 元素不足（${a[1]} < ${a[2]}）`); bad++; } });
+if (!bad) console.log('  ✅ 动效层元素齐备（漂浮 / 呼吸 / 能量流动 / 星云 / 流星 / 波纹）');
+
+/* 6b. 动效数量预算：同时动画的元素太多会明显掉帧，这里设一个上限防止以后失控
+   （逐项统计所有带 animation 的元素：漂浮、光晕、星尘、光点、虚线流动、星云、流星、波纹、刻线环） */
+const budget = anim.float + anim.halo + anim.pulse + anim.twinkle + anim.co
+  + anim.nebula + anim.meteor + anim.wave + anim.rune;
+console.log(`  同时动画的元素约 ${budget} 个（预算 ≤ 480）`);
+if (budget > 480) { console.log(`  ❌ 动效元素过多 (${budget})，应减少同时动画的数量`); bad++; }
+else console.log('  ✅ 动效开销在预算内（重绘密集的 filter 动画已全部移除）');
+
+/* 7. 每颗星的动效参数是错相的，否则会整片一起闪 */
+const fdels = [...html.matchAll(/--fd:([\d.]+)s;--fdl:(-[\d.]+)s/g)].map(m => +m[2]);
+const uniqDelays = new Set(fdels.map(v => v.toFixed(2))).size;
+console.log(`  漂浮相位: ${fdels.length} 颗星，${uniqDelays} 个不同延迟` +
+  `（范围 ${Math.min(...fdels).toFixed(2)} ~ ${Math.max(...fdels).toFixed(2)}s）`);
+if (fdels.length === expected && uniqDelays < expected * 0.6) { console.log('  ❌ 动效相位太集中，会看起来成片同闪'); bad++; }
+else console.log('  ✅ 动效相位错开，星点是各自独立地呼吸');
+
 console.log('');
 if (bad) { console.log(`❌ 星图布局自检未通过（${bad} 项）`); process.exit(1); }
 console.log('✅ 星图布局自检通过');

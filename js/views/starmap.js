@@ -30,6 +30,22 @@
   var W = 1700, H = 1700, CX = 850, CY = 850;
   var PAD = 90;                       // 默认视野四周的留白
   var POS_KEY = 'csp-s-v5-starmap-pos';
+  var MOTION_KEY = 'csp-s-v5-starmap-motion';
+
+  /* 动态效果开关：默认开；系统偏好「减少动态」时默认关 */
+  function motionOn() {
+    try {
+      var v = localStorage.getItem(MOTION_KEY);
+      if (v === '1') return true;
+      if (v === '0') return false;
+    } catch (e) { }
+    try {
+      return !(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+    } catch (e) { return true; }
+  }
+  function setMotion(on) {
+    try { localStorage.setItem(MOTION_KEY, on ? '1' : '0'); } catch (e) { }
+  }
 
   /* 确定性伪随机（同一考点每次抖动方向一致，刷新不会跳来跳去） */
   function hash01(str, salt) {
@@ -180,43 +196,84 @@
 
   function svgFor(g, rings) {
     var s = [];
-    s.push('<svg id="sm-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet">');
+    s.push('<svg id="sm-svg" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="xMidYMid meet"' +
+      ' xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">');
 
-    /* --- 背景：星尘 + 星云 --- */
+    /* ---------- defs：星云 / 发光 / 流星拖尾 ---------- */
     s.push('<defs>');
     s.push('<radialGradient id="sm-nebula" cx="50%" cy="50%" r="50%">' +
       '<stop offset="0%" stop-color="#12294a" stop-opacity="0.55"/>' +
       '<stop offset="45%" stop-color="#0b1730" stop-opacity="0.35"/>' +
       '<stop offset="100%" stop-color="#050a14" stop-opacity="0"/>' +
       '</radialGradient>');
+    [['sm-neb-a', '#1b4b8f'], ['sm-neb-b', '#7c5cff'], ['sm-neb-c', '#00b4d8'], ['sm-neb-d', '#ff5ec4']]
+      .forEach(function (nb) {
+        s.push('<radialGradient id="' + nb[0] + '" cx="50%" cy="50%" r="50%">' +
+          '<stop offset="0%" stop-color="' + nb[1] + '" stop-opacity="0.5"/>' +
+          '<stop offset="55%" stop-color="' + nb[1] + '" stop-opacity="0.14"/>' +
+          '<stop offset="100%" stop-color="' + nb[1] + '" stop-opacity="0"/></radialGradient>');
+      });
+    s.push('<radialGradient id="sm-core-g" cx="50%" cy="50%" r="50%">' +
+      '<stop offset="0%" stop-color="#22e6ff" stop-opacity="0.55"/>' +
+      '<stop offset="60%" stop-color="#7c5cff" stop-opacity="0.18"/>' +
+      '<stop offset="100%" stop-color="#22e6ff" stop-opacity="0"/></radialGradient>');
+    s.push('<linearGradient id="sm-meteor-g" x1="0%" y1="0%" x2="100%" y2="0%">' +
+      '<stop offset="0%" stop-color="#22e6ff" stop-opacity="0"/>' +
+      '<stop offset="70%" stop-color="#9fe8ff" stop-opacity="0.85"/>' +
+      '<stop offset="100%" stop-color="#ffffff" stop-opacity="1"/></linearGradient>');
     s.push('<filter id="sm-glow" x="-120%" y="-120%" width="340%" height="340%">' +
       '<feGaussianBlur stdDeviation="3.4" result="b"/>' +
       '<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>');
-    s.push('<filter id="sm-glow-soft" x="-160%" y="-160%" width="420%" height="420%">' +
-      '<feGaussianBlur stdDeviation="7" result="b2"/>' +
+    s.push('<filter id="sm-glow-soft" x="-200%" y="-200%" width="500%" height="500%">' +
+      '<feGaussianBlur stdDeviation="9" result="b2"/>' +
       '<feMerge><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge></filter>');
     s.push('</defs>');
 
-    s.push('<circle cx="' + CX + '" cy="' + CY + '" r="860" fill="url(#sm-nebula)"/>');
+    /* ---------- 背景：缓慢流动的星云（呼吸 + 漂移） ---------- */
+    s.push('<circle cx="' + CX + '" cy="' + CY + '" r="880" fill="url(#sm-nebula)"/>');
+    s.push('<g class="sm-nebulae">' +
+      '<circle class="sm-neb" cx="' + (CX - 330) + '" cy="' + (CY - 250) + '" r="430" fill="url(#sm-neb-a)" style="--dur:44s;--dx:60px;--dy:-40px"/>' +
+      '<circle class="sm-neb" cx="' + (CX + 380) + '" cy="' + (CY + 180) + '" r="470" fill="url(#sm-neb-b)" style="--dur:56s;--dx:-70px;--dy:50px;animation-delay:-12s"/>' +
+      '<circle class="sm-neb" cx="' + (CX + 120) + '" cy="' + (CY - 420) + '" r="360" fill="url(#sm-neb-c)" style="--dur:38s;--dx:-50px;--dy:70px;animation-delay:-20s"/>' +
+      '</g>');
 
-    /* 星尘（固定伪随机，保证每次一样） */
+    /* ---------- 星尘：静态底噪 + 会眨眼的高光星 ---------- */
     var i, seed = 20261031;
     function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
-    var dust = [];
-    for (i = 0; i < 760; i++) {
-      var dx = rnd() * W, dy = rnd() * H, dr = rnd() * 2.1 + 0.5;
-      dust.push('<circle class="sm-dust" cx="' + dx.toFixed(0) + '" cy="' + dy.toFixed(0) +
-        '" r="' + dr.toFixed(2) + '" style="animation-delay:' + (rnd() * 6).toFixed(1) + 's"/>');
+    var dust = [], twinkle = [];
+    for (i = 0; i < 620; i++) {
+      var dx = rnd() * W, dy = rnd() * H, dr = rnd() * 1.7 + 0.4;
+      dust.push('<circle cx="' + dx.toFixed(0) + '" cy="' + dy.toFixed(0) + '" r="' + dr.toFixed(2) +
+        '" fill="#9fd0ff" opacity="' + (0.1 + rnd() * 0.25).toFixed(2) + '"/>');
     }
-    s.push('<g>' + dust.join('') + '</g>');
+    s.push('<g class="sm-dustfield">' + dust.join('') + '</g>');
+    for (i = 0; i < 86; i++) {
+      var tx = rnd() * W, ty = rnd() * H, tr = rnd() * 2.6 + 1.4;
+      twinkle.push('<circle class="sm-dust" cx="' + tx.toFixed(0) + '" cy="' + ty.toFixed(0) +
+        '" r="' + tr.toFixed(2) + '" style="--dur:' + (3 + rnd() * 5).toFixed(1) + 's;animation-delay:-' +
+        (rnd() * 6).toFixed(1) + 's"/>');
+    }
+    s.push('<g>' + twinkle.join('') + '</g>');
 
-    /* --- 法阵刻线环 --- */
+    /* ---------- 流星 ---------- */
+    s.push('<g class="sm-meteors">');
+    for (i = 0; i < 5; i++) {
+      var mx = rnd() * W * 0.7, my = rnd() * H * 0.45, len = 150 + rnd() * 190;
+      s.push('<g class="sm-meteor" style="--dur:' + (9 + rnd() * 9).toFixed(1) + 's;animation-delay:-' +
+        (rnd() * 16).toFixed(1) + 's;--travel:' + (900 + rnd() * 700).toFixed(0) + 'px">' +
+        '<line x1="' + mx.toFixed(0) + '" y1="' + my.toFixed(0) + '" x2="' + (mx + len).toFixed(0) +
+        '" y2="' + (my + len * 0.42).toFixed(0) + '" stroke="url(#sm-meteor-g)" stroke-width="2.2" stroke-linecap="round"/>' +
+        '</g>');
+    }
+    s.push('</g>');
+
+    /* ---------- 法阵刻线环（反向旋转 + 呼吸） ---------- */
     s.push('<g class="sm-runes">');
     [234, 468, 624, 780].forEach(function (r, k) {
       s.push('<circle class="sm-rune" cx="' + CX + '" cy="' + CY + '" r="' + r + '"' +
         ' style="animation-duration:' + (90 + k * 34) + 's;animation-direction:' + (k % 2 ? 'reverse' : 'normal') + '"/>');
     });
-    /* 外圈刻度 */
+    s.push('<circle class="sm-rune sm-rune-pulse" cx="' + CX + '" cy="' + CY + '" r="624"/>');
     var ticks = [];
     for (i = 0; i < 120; i++) {
       var a2 = i * Math.PI * 2 / 120;
@@ -227,23 +284,36 @@
     s.push(ticks.join(''));
     s.push('</g>');
 
-    /* --- 中心核心 --- */
+    /* ---------- 中心核心：脉动光晕 + 扩散波纹 ---------- */
     s.push('<g class="sm-core">' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="150" fill="url(#sm-core-g)" class="sm-core-atmo"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="96" class="sm-core-glow"/>' +
       '<circle cx="' + CX + '" cy="' + CY + '" r="72" class="sm-core-ring"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="72" class="sm-core-wave" style="animation-delay:0s"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="72" class="sm-core-wave" style="animation-delay:-2.2s"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="72" class="sm-core-wave" style="animation-delay:-4.4s"/>' +
       '<text x="' + CX + '" y="' + (CY - 6) + '" class="sm-core-t">CSP-S</text>' +
       '<text x="' + CX + '" y="' + (CY + 22) + '" class="sm-core-s">2026 ROUND 2</text>' +
       '</g>');
 
-    /* --- 连线 --- */
+    /* ---------- 连线：虚线流动 + 沿线的能量光点 ---------- */
     s.push('<g class="sm-edges">');
-    g.edges.forEach(function (e) {
-      s.push('<path class="sm-edge ' + e.kind + '" data-a="' + e.a + '" data-b="' + e.b +
-        '" d="' + edgePath(e, g.byId) + '"/>');
+    var pulseEvery = Math.max(3, Math.round(g.edges.length / 38));   // 约 38 条线上跑光点
+    g.edges.forEach(function (e, idx) {
+      var d = edgePath(e, g.byId);
+      var id = 'sme-' + idx;
+      s.push('<path id="' + id + '" class="sm-edge ' + e.kind + '" data-a="' + e.a + '" data-b="' + e.b +
+        '" d="' + d + '" style="animation-delay:-' + (idx % 12 * 0.23).toFixed(2) + 's"/>');
+      if (idx % pulseEvery === 0) {
+        var dur = (3.4 + (idx % 7) * 0.5).toFixed(1);
+        s.push('<circle class="sm-pulse" r="4" style="--pc:' + (e.kind === 'prereq' ? '#b3a1ff' : '#22e6ff') + '">' +
+          '<animateMotion dur="' + dur + 's" repeatCount="indefinite" begin="-' + (idx % 9 * 0.6).toFixed(1) + 's" rotate="auto">' +
+          '<mpath href="#' + id + '" xlink:href="#' + id + '"/></animateMotion></circle>');
+      }
     });
     s.push('</g>');
 
-    /* --- 板块环标注 --- */
+    /* ---------- 板块环标注 ---------- */
     rings.forEach(function (r, i) {
       var a = -Math.PI / 2 + i * (Math.PI / 9) - (2 * Math.PI / 48);
       var x = CX + (r.r + 19) * Math.cos(a), y = CY + (r.r + 19) * Math.sin(a);
@@ -251,19 +321,25 @@
         '" style="fill:' + (CAT_COLOR[r.cat] || '#22e6ff') + '">' + U.esc(r.cat) + ' · ' + r.count + '</text>');
     });
 
-    /* --- 星体 --- */
+    /* ---------- 星体：外层负责位置（可拖动），内层负责漂浮呼吸 ---------- */
     s.push('<g class="sm-stars">');
     g.nodes.forEach(function (n) {
       var st = stateOf(n.id);
       var col = stateColor(n);
       var rr = starRadius(n);
+      var fd = (9 + hash01(n.id, 3) * 7).toFixed(1);          // 漂浮周期 9~16s
+      var fdl = (-hash01(n.id, 5) * 12).toFixed(2);
+      var hd = (2.6 + hash01(n.id, 11) * 3.4).toFixed(1);      // 呼吸周期
+      var hdl = (-hash01(n.id, 17) * 6).toFixed(2);
+      var amp = (5 + hash01(n.id, 19) * 6).toFixed(1);          // 漂浮幅度 5~11
       s.push('<g class="' + nodeClass(n) + '" data-id="' + n.id + '" data-cat="' + U.esc(n.cat) + '"' +
         ' transform="translate(' + n.x.toFixed(1) + ',' + n.y.toFixed(1) + ')" style="--c:' + col + '">' +
-        '<circle class="sm-halo" r="' + (rr + 13).toFixed(1) + '"/>' +
+        '<g class="star-float" style="--fd:' + fd + 's;--fdl:' + fdl + 's;--amp:' + amp + 'px">' +
+        '<circle class="sm-halo" r="' + (rr + 13).toFixed(1) + '" style="--hd:' + hd + 's;--hdl:' + hdl + 's"/>' +
         '<circle class="sm-body" r="' + rr.toFixed(1) + '"/>' +
         (st === 'none' ? '' : '<circle class="sm-state-ring" r="' + (rr + 7).toFixed(1) + '"/>') +
         '<text class="sm-label" y="' + (rr + 24).toFixed(1) + '">' + U.esc(n.name) + '</text>' +
-        '</g>');
+        '</g></g>');
     });
     s.push('</g>');
 
@@ -305,6 +381,7 @@
       }).join('');
     h += '<span class="chip' + (view.q === '__prob' ? ' on' : '') + '" data-sm-prob="1" style="margin-left:12px">仅有题目的星</span>';
     h += '<input id="sm-search" class="sm-search" placeholder="搜索考点，回车定位…" value="' + U.esc(view.q === '__prob' ? '' : view.q) + '">';
+    h += '<span class="chip' + (motionOn() ? ' on' : '') + '" id="sm-motion" title="开/关星星漂浮、能量流动、流星等动效">✨ 动态效果</span>';
     h += '<button class="btn btn-xs" id="sm-reset-pos" title="清除手动拖动，恢复自动布局">重置布局</button>';
     h += '<button class="btn btn-xs" id="sm-reset">重置视图</button>';
     h += '</div>';
@@ -636,8 +713,44 @@
       U.toast('已恢复自动排布', 'ok');
       global.CSP.app.refresh();
     };
+    /* 动态效果开关：即时生效，不需要整页重绘 */
+    if (!motionOn()) stage.classList.add('sm-nomotion');
+    var mo = U.$('#sm-motion');
+    if (mo) {
+      if (motionOn()) stage.classList.add('sm-force-motion');
+      mo.onclick = function () {
+        var on = !motionOn();
+        setMotion(on);
+        stage.classList.toggle('sm-nomotion', !on);
+        stage.classList.toggle('sm-force-motion', on);
+        mo.classList.toggle('on', on);
+        U.toast(on ? '动态效果已开启 ✨' : '动态效果已关闭（省电模式）', 'info', 1600);
+      };
+    }
     var fit = U.$('#sm-fit');
     if (fit) fit.onclick = function () { global.CSP.app.refresh(); };
+
+    /* 滚出视口就把动画停下来，避免在别的页面白白烧 CPU */
+    if (global.IntersectionObserver) {
+      try {
+        var io = new IntersectionObserver(function (ents) {
+          ents.forEach(function (en) {
+            var away = !en.isIntersecting;
+            stage.classList.toggle('sm-paused', away);
+            try {
+              if (svg.pauseAnimations) { if (away) svg.pauseAnimations(); else svg.unpauseAnimations(); }
+            } catch (e) { }
+          });
+        }, { threshold: 0.01 });
+        io.observe(stage);
+      } catch (e) { }
+    }
+    document.addEventListener('visibilitychange', function () {
+      try {
+        if (!svg.pauseAnimations) return;
+        if (document.hidden) svg.pauseAnimations(); else svg.unpauseAnimations();
+      } catch (e) { }
+    });
 
     /* ---- 搜索 ---- */
     var se = U.$('#sm-search');
