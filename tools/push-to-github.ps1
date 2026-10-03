@@ -21,15 +21,20 @@ param(
 $ErrorActionPreference = 'Continue'
 
 # Watt Toolkit 的安装位置（已知路径，找不到时再按进程名探测）
-$candidates = @(
+# 注意最外层再包一层 @()：只有一个命中时 Where-Object 会返回字符串，
+# 那样 $candidates[0] 会取到第一个「字符」而不是第一个路径。
+$candidates = @(@(
   'D:\steam++\Steam++.exe',
   (Join-Path $env:ProgramFiles 'Watt Toolkit\Steam++.exe'),
   (Join-Path ${env:ProgramFiles(x86)} 'Watt Toolkit\Steam++.exe'),
   (Join-Path $env:LOCALAPPDATA 'Watt Toolkit\Steam++.exe')
-) | Where-Object { $_ -and (Test-Path $_) }
+) | Where-Object { $_ -and (Test-Path $_) })
 
 function Test-WattRunning {
-  [bool](Get-Process -Name 'Steam++', 'Steam++.Accelerator', 'WattToolkit' -ErrorAction SilentlyContinue)
+  # 进程名可能是 Steam++ / Steam++.Accelerator / WattToolkit，统一前缀匹配
+  $p = Get-Process -ErrorAction SilentlyContinue |
+       Where-Object { $_.ProcessName -match '^(Steam\+\+|Watt)' }
+  return [bool]$p
 }
 
 function Test-GitHubReachable {
@@ -48,12 +53,14 @@ Write-Host '=== 1. Watt Toolkit 状态 ===' -ForegroundColor Cyan
 if (Test-WattRunning) {
   Write-Host '  ✅ Watt Toolkit 已在运行' -ForegroundColor Green
 } else {
-  if (-not $candidates) {
+  if (-not $candidates -or $candidates.Count -eq 0) {
     Write-Warning '  找不到 Watt Toolkit 可执行文件，请手动打开后重试。'
   } else {
-    $exe = $candidates[0]
+    $exe = @($candidates)[0]
     Write-Host "  ⏳ 未运行，正在启动：$exe"
-    Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -ErrorAction SilentlyContinue
+    $dir = Split-Path -Path $exe -Parent
+    if ($dir) { Start-Process -FilePath $exe -WorkingDirectory $dir -ErrorAction SilentlyContinue }
+    else { Start-Process -FilePath $exe -ErrorAction SilentlyContinue }
   }
   # 等它起来
   $t0 = Get-Date
