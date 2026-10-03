@@ -74,6 +74,22 @@ python -m http.server 8080
 
 > 也可以直接双击 `index.html` 本地打开（评测与部分能力需要联网）。
 
+### 本机推送前请先开加速器
+
+本机 hosts 把 `github.com` 指向了 `127.0.0.1`，直连 GitHub 会失败；需要先启动
+**Watt Toolkit（瓦特工具箱 / Steam++）** 并开启网络加速，它会代理 `github.com`。
+
+```powershell
+# 自动检测/启动 Watt Toolkit，等连通后推送（推荐）
+powershell -ExecutionPolicy Bypass -File tools/push-to-github.ps1
+```
+
+脚本会：① 若 Watt Toolkit 没运行就自动拉起 `D:\steam++\Steam++.exe`；② 用 `git ls-remote`
+轮询直到 GitHub 真正可达；③ 执行 `git push`。只想确认连通性可加 `-WaitOnly`。
+
+> 改完静态资源记得同步提升 `index.html` 里的 `?v=` 版本号 —— 否则浏览器会继续用旧的
+> CSS/JS（本项目的 `theme.css` 曾经因此没生效，导致星图动效完全不动）。
+
 ---
 
 ## ⚙️ 关于实时评测
@@ -113,7 +129,10 @@ js/data/
 tools/
   verify.js                数据层校验（字段 / 测试点 / 可视化 / 卡片与考点覆盖）
   verify-render.js         可视化渲染自检（逐步渲染，确保每步都画得出东西）
+  verify-starmap.js        知识星图自检（离散度 / 越界 / 动效层 / 动画数量预算）
   verify-cpp.js            C++ 参考解独立验证（Wandbox 真实编译比对）
+  check-live.js            线上部署自检（资源可达 / 关键功能代码 / 题库规模）
+  push-to-github.ps1       推送前自动确保 Watt Toolkit 在运行，再 git push
 docs/CONTENT-SCHEMA.md     内容编写契约
 ```
 
