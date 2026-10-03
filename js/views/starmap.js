@@ -25,7 +25,33 @@
     '综合技巧': '#9f8cff'
   };
 
-  var W = 1000, H = 1000, CX = 500, CY = 500;
+  /* 世界坐标：8 个环摊开到半径 234..780，相邻环间距 78（配合小径向抖动也不会挤到一起），
+     星图占满整行宽度，因此屏幕上每颗星之间有充足空间 */
+  var W = 1700, H = 1700, CX = 850, CY = 850;
+  var PAD = 90;                       // 默认视野四周的留白
+  var POS_KEY = 'csp-s-v5-starmap-pos';
+
+  /* 确定性伪随机（同一考点每次抖动方向一致，刷新不会跳来跳去） */
+  function hash01(str, salt) {
+    var h = 2166136261 ^ (salt || 0), i;
+    for (i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return ((h >>> 0) % 100000) / 100000;
+  }
+
+  function loadPos() {
+    try { return JSON.parse(localStorage.getItem(POS_KEY) || '{}') || {}; }
+    catch (e) { return {}; }
+  }
+  function savePos(o) { try { localStorage.setItem(POS_KEY, JSON.stringify(o)); } catch (e) { } }
+  function clearPos() { try { localStorage.removeItem(POS_KEY); } catch (e) { } }
+  /** 把用户手动拖动过的坐标覆盖到自动布局之上 */
+  function applySavedPos(g) {
+    var p = loadPos(), k = 0;
+    g.nodes.forEach(function (n) {
+      if (p[n.id]) { n.x = p[n.id][0]; n.y = p[n.id][1]; n.custom = true; k++; }
+    });
+    return k;
+  }
 
   /* ------------------------------------------------------------ 图数据 --- */
   function buildGraph() {
@@ -91,19 +117,26 @@
     /* 节点多的板块放外圈（周长更长，不拥挤） */
     var sorted = order.slice().sort(function (a, b) { return cats[a].length - cats[b].length; });
 
-    var R0 = 128, STEP = 40;
+    /* 环间距 78：即使叠加径向抖动，相邻环之间仍能保证 ≥60 的净间距；
+       离散感主要由「角向抖动 + 大半径」提供，而不是把点在环之间乱塞 */
+    var R0 = 234, STEP = 78;
     var rings = [];
     sorted.forEach(function (cat, ri) {
       var list = cats[cat];
       var r = R0 + ri * STEP;
-      var base = -Math.PI / 2 + ri * (Math.PI / 11);       // 每环错开一点，避免全部对齐
+      var base = -Math.PI / 2 + ri * (Math.PI / 9);        // 每环错开，避免所有环的起点对齐
       var step = 2 * Math.PI / list.length;
       list.forEach(function (n, i) {
         var a = base + i * step;
-        n.r = r;
-        n.ang = a;
-        n.x = CX + r * Math.cos(a);
-        n.y = CY + r * Math.sin(a);
+        /* 径向只给 ±8（不破坏环间距），角向给 ±34% 步长 → 星点疏密自然，不像刻度 */
+        var jr = (hash01(n.id, 7) - 0.5) * 16;
+        var ja = (hash01(n.id, 13) - 0.5) * step * 0.68;
+        var rr = r + jr;
+        var aa = a + ja;
+        n.r = rr;
+        n.ang = aa;
+        n.x = CX + rr * Math.cos(aa);
+        n.y = CY + rr * Math.sin(aa);
         n.ring = ri;
         n.catColor = CAT_COLOR[cat] || '#22e6ff';
         if (i === 0) rings.push({ cat: cat, r: r, count: list.length });
@@ -124,7 +157,8 @@
   }
 
   function starRadius(n) {
-    return 3.4 + Math.min(5.4, n.count * 1.15) + (n.level >= 3 ? 0.8 : 0);
+    /* 世界坐标变大了，星体半径同步放大，保证屏幕上的观感不变 */
+    return 6 + Math.min(9, n.count * 2) + (n.level >= 3 ? 1.4 : 0);
   }
 
   function stateOf(id) {
@@ -163,14 +197,14 @@
       '<feMerge><feMergeNode in="b2"/><feMergeNode in="SourceGraphic"/></feMerge></filter>');
     s.push('</defs>');
 
-    s.push('<circle cx="' + CX + '" cy="' + CY + '" r="470" fill="url(#sm-nebula)"/>');
+    s.push('<circle cx="' + CX + '" cy="' + CY + '" r="860" fill="url(#sm-nebula)"/>');
 
     /* 星尘（固定伪随机，保证每次一样） */
     var i, seed = 20261031;
     function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
     var dust = [];
-    for (i = 0; i < 220; i++) {
-      var dx = rnd() * W, dy = rnd() * H, dr = rnd() * 1.1 + 0.25;
+    for (i = 0; i < 760; i++) {
+      var dx = rnd() * W, dy = rnd() * H, dr = rnd() * 2.1 + 0.5;
       dust.push('<circle class="sm-dust" cx="' + dx.toFixed(0) + '" cy="' + dy.toFixed(0) +
         '" r="' + dr.toFixed(2) + '" style="animation-delay:' + (rnd() * 6).toFixed(1) + 's"/>');
     }
@@ -178,15 +212,15 @@
 
     /* --- 法阵刻线环 --- */
     s.push('<g class="sm-runes">');
-    [96, 236, 336, 424].forEach(function (r, k) {
+    [234, 468, 624, 780].forEach(function (r, k) {
       s.push('<circle class="sm-rune" cx="' + CX + '" cy="' + CY + '" r="' + r + '"' +
         ' style="animation-duration:' + (90 + k * 34) + 's;animation-direction:' + (k % 2 ? 'reverse' : 'normal') + '"/>');
     });
     /* 外圈刻度 */
     var ticks = [];
-    for (i = 0; i < 72; i++) {
-      var a2 = i * Math.PI * 2 / 72;
-      var r1 = 424, r2 = i % 6 === 0 ? 414 : 419;
+    for (i = 0; i < 120; i++) {
+      var a2 = i * Math.PI * 2 / 120;
+      var r1 = 780, r2 = i % 10 === 0 ? 756 : 768;
       ticks.push('<line class="sm-tick" x1="' + (CX + r1 * Math.cos(a2)).toFixed(1) + '" y1="' + (CY + r1 * Math.sin(a2)).toFixed(1) +
         '" x2="' + (CX + r2 * Math.cos(a2)).toFixed(1) + '" y2="' + (CY + r2 * Math.sin(a2)).toFixed(1) + '"/>');
     }
@@ -195,10 +229,10 @@
 
     /* --- 中心核心 --- */
     s.push('<g class="sm-core">' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="52" class="sm-core-glow"/>' +
-      '<circle cx="' + CX + '" cy="' + CY + '" r="40" class="sm-core-ring"/>' +
-      '<text x="' + CX + '" y="' + (CY - 4) + '" class="sm-core-t">CSP-S</text>' +
-      '<text x="' + CX + '" y="' + (CY + 13) + '" class="sm-core-s">2026 ROUND 2</text>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="96" class="sm-core-glow"/>' +
+      '<circle cx="' + CX + '" cy="' + CY + '" r="72" class="sm-core-ring"/>' +
+      '<text x="' + CX + '" y="' + (CY - 6) + '" class="sm-core-t">CSP-S</text>' +
+      '<text x="' + CX + '" y="' + (CY + 22) + '" class="sm-core-s">2026 ROUND 2</text>' +
       '</g>');
 
     /* --- 连线 --- */
@@ -211,8 +245,8 @@
 
     /* --- 板块环标注 --- */
     rings.forEach(function (r, i) {
-      var a = -Math.PI / 2 + i * (Math.PI / 11) - (2 * Math.PI / 64);
-      var x = CX + (r.r + 17) * Math.cos(a), y = CY + (r.r + 17) * Math.sin(a);
+      var a = -Math.PI / 2 + i * (Math.PI / 9) - (2 * Math.PI / 48);
+      var x = CX + (r.r + 19) * Math.cos(a), y = CY + (r.r + 19) * Math.sin(a);
       s.push('<text class="sm-ring-label" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) +
         '" style="fill:' + (CAT_COLOR[r.cat] || '#22e6ff') + '">' + U.esc(r.cat) + ' · ' + r.count + '</text>');
     });
@@ -225,10 +259,10 @@
       var rr = starRadius(n);
       s.push('<g class="' + nodeClass(n) + '" data-id="' + n.id + '" data-cat="' + U.esc(n.cat) + '"' +
         ' transform="translate(' + n.x.toFixed(1) + ',' + n.y.toFixed(1) + ')" style="--c:' + col + '">' +
-        '<circle class="sm-halo" r="' + (rr + 7).toFixed(1) + '"/>' +
+        '<circle class="sm-halo" r="' + (rr + 13).toFixed(1) + '"/>' +
         '<circle class="sm-body" r="' + rr.toFixed(1) + '"/>' +
-        (st === 'none' ? '' : '<circle class="sm-state-ring" r="' + (rr + 4).toFixed(1) + '"/>') +
-        '<text class="sm-label" y="' + (rr + 12).toFixed(1) + '">' + U.esc(n.name) + '</text>' +
+        (st === 'none' ? '' : '<circle class="sm-state-ring" r="' + (rr + 7).toFixed(1) + '"/>') +
+        '<text class="sm-label" y="' + (rr + 24).toFixed(1) + '">' + U.esc(n.name) + '</text>' +
         '</g>');
     });
     s.push('</g>');
@@ -243,6 +277,7 @@
   global.CSP.views.starmap = function () {
     var g = buildGraph();
     var rings = layout(g);
+    applySavedPos(g);            // 用户拖动过的星按记忆位置摆放
     var store = global.CSP.store;
     var st = store.stats();
     var flagged = store.flaggedKnowledge().length;
@@ -270,6 +305,7 @@
       }).join('');
     h += '<span class="chip' + (view.q === '__prob' ? ' on' : '') + '" data-sm-prob="1" style="margin-left:12px">仅有题目的星</span>';
     h += '<input id="sm-search" class="sm-search" placeholder="搜索考点，回车定位…" value="' + U.esc(view.q === '__prob' ? '' : view.q) + '">';
+    h += '<button class="btn btn-xs" id="sm-reset-pos" title="清除手动拖动，恢复自动布局">重置布局</button>';
     h += '<button class="btn btn-xs" id="sm-reset">重置视图</button>';
     h += '</div>';
 
@@ -282,6 +318,7 @@
       '<span class="sm-lg"><i class="lg-line prereq"></i>学习先后 / 依赖</span>' +
       '<span class="sm-lg"><i class="lg-line co"></i>同题共现</span>' +
       '<span class="sm-lg"><i class="lg-star big" style="--c:#22e6ff"></i>星越大 = 配套题目越多</span>' +
+      '<span class="sm-lg mono-sm">✥ 星星可自由拖动（位置会自动记住） · 滚轮缩放 · 拖空白处平移</span>' +
       '<span class="sm-lg mono-sm">当前 ' + st.mastery.mastered + '/' + g.nodes.length + ' 已掌握 · ' + flagged + ' 待巩固</span>' +
       '</div>';
 
@@ -309,21 +346,14 @@
       return h;
     }
 
-    /* 星图本体 + 右侧详情 */
-    h += '<div class="sm-layout">';
+    /* 星图本体（占满整行）+ 悬浮在右侧的知识卡抽屉 */
     h += '<div class="panel sm-stage-panel"><div class="sm-stage" id="sm-stage">' + svgFor(g, rings) +
       '<div class="sm-tip hidden" id="sm-tip"></div>' +
-      '<div class="sm-zoom"><button class="btn btn-xs" data-sm-zoom="in">+</button>' +
-      '<button class="btn btn-xs" data-sm-zoom="out">−</button></div>' +
+      '<div class="sm-zoom"><button class="btn btn-xs" data-sm-zoom="in" title="放大">+</button>' +
+      '<button class="btn btn-xs" data-sm-zoom="out" title="缩小">−</button>' +
+      '<button class="btn btn-xs" id="sm-fit" title="适应窗口">⤢</button></div>' +
+      '<div class="panel sm-side" id="sm-side"></div>' +
       '</div></div>';
-    h += '<div class="panel sm-side" id="sm-side"><div class="panel-bd">' +
-      '<div class="sm-side-empty"><div style="font-size:26px">✧</div>' +
-      '<div class="mono-sm mt">把鼠标移到任意一颗星上</div>' +
-      '<div class="mono-sm">查看它与其他考点的连线</div>' +
-      '<div class="mono-sm">点击星星展开完整知识卡</div>' +
-      '<div class="sm-side-hint">拖动平移 · 滚轮缩放</div>' +
-      '</div></div></div>';
-    h += '</div>';
     return h;
   };
 
@@ -367,6 +397,7 @@
 
     var g = buildGraph();
     layout(g);          // 必须重跑布局：节点的 x/y 是「定位到某颗星」所需的坐标
+    applySavedPos(g);   // 再叠加用户手动摆放的位置
 
     /* ---- 筛选：给不匹配的星加 dim ---- */
     function applyFilter() {
@@ -433,21 +464,28 @@
       var id = el.getAttribute('data-id');
       el.addEventListener('mouseenter', function () { hoverId(id); });
       el.addEventListener('mouseleave', function () { clearHl(); });
-      el.addEventListener('click', function (ev) { ev.stopPropagation(); openCard(id); });
+      el.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        if (suppressClick) { suppressClick = false; return; }   // 刚刚是拖动，别当点击
+        openCard(id);
+      });
     });
 
     /* ---- 点击：右侧知识卡 ---- */
     function openCard(id) {
       var side = U.$('#sm-side');
       if (!side) return;
-      side.innerHTML = '<div class="panel-bd">' +
+      var n = g.byId[id];
+      side.innerHTML =
         '<div class="sm-side-hd"><span class="mono-sm">知识卡</span>' +
-        '<a class="chip ml-auto" href="#/knowledge/' + id + '">独立页面打开 →</a></div>' +
-        global.CSP.views.knowledgeCardHtml(id) + '</div>';
+        '<a class="chip" href="#/knowledge/' + id + '" style="margin-left:6px">独立页 →</a>' +
+        '<button class="btn btn-xs sm-side-close" id="sm-side-close">✕</button></div>' +
+        '<div class="sm-side-bd">' + global.CSP.views.knowledgeCardHtml(id) + '</div>';
       global.CSP.views.bindKmark(side, id);
       side.classList.add('open');
-      var n = g.byId[id];
-      /* 高亮该星并自动聚焦 */
+      var cl = U.$('#sm-side-close', side);
+      if (cl) cl.onclick = function (e) { e.stopPropagation(); side.classList.remove('open'); };
+      /* 高亮该星并自动聚焦（不用整页刷新） */
       focusOn(n);
     }
     function focusOn(n) {
@@ -462,18 +500,18 @@
     }
 
     /* ---- 缩放 / 平移 ---- */
-    var vb = { x: -30, y: -30, w: W + 60, h: H + 60 };
+    var vb = { x: -PAD, y: -PAD, w: W + PAD * 2, h: H + PAD * 2 };
     function applyVb() {
       svg.setAttribute('viewBox', [vb.x, vb.y, vb.w, vb.h].map(function (v) {
         return (Math.round(v * 10) / 10);
       }).join(' '));
     }
     function clampVb() {
-      var maxW = W + 60, maxH = H + 60;
-      vb.w = Math.max(150, Math.min(maxW, vb.w));
+      var maxW = W + PAD * 2, maxH = H + PAD * 2;
+      vb.w = Math.max(170, Math.min(maxW, vb.w));
       vb.h = vb.w * (maxH / maxW);
-      vb.x = Math.max(-160, Math.min(W + 160 - vb.w, vb.x));
-      vb.y = Math.max(-160, Math.min(H + 160 - vb.h, vb.y));
+      vb.x = Math.max(-300, Math.min(W + 300 - vb.w, vb.x));
+      vb.y = Math.max(-300, Math.min(H + 300 - vb.h, vb.y));
     }
     applyVb();
 
@@ -490,6 +528,73 @@
       clampVb();
       applyVb();
     }, { passive: false });
+
+    /* ---- 拖动单颗星（自由摆放，位置记进 localStorage） ---- */
+    var edgeMap = {};                      // 星 id -> 与它相连的连线元素
+    U.$$('.sm-edge', svg).forEach(function (el) {
+      var a = el.getAttribute('data-a'), b = el.getAttribute('data-b');
+      (edgeMap[a] = edgeMap[a] || []).push(el);
+      (edgeMap[b] = edgeMap[b] || []).push(el);
+    });
+    function pathBetween(A, B) {
+      var mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+      var cx = mx + (CX - mx) * 0.22, cy = my + (CY - my) * 0.22;
+      return 'M' + A.x.toFixed(1) + ',' + A.y.toFixed(1) +
+        'Q' + cx.toFixed(1) + ',' + cy.toFixed(1) + ' ' + B.x.toFixed(1) + ',' + B.y.toFixed(1);
+    }
+    function moveStar(n, el) {
+      el.setAttribute('transform', 'translate(' + n.x.toFixed(1) + ',' + n.y.toFixed(1) + ')');
+      (edgeMap[n.id] || []).forEach(function (p) {
+        var A = g.byId[p.getAttribute('data-a')], B = g.byId[p.getAttribute('data-b')];
+        if (A || B) p.setAttribute('d', pathBetween(A || n, B || n));
+      });
+    }
+
+    var posMap = loadPos();
+    var starDrag = null;
+    var suppressClick = false;
+
+    U.$$('.star', svg).forEach(function (el) {
+      var id = el.getAttribute('data-id');
+      el.addEventListener('mousedown', function (ev) {
+        ev.stopPropagation();
+        ev.preventDefault();
+        starDrag = {
+          id: id, el: el, node: g.byId[id],
+          sx: ev.clientX, sy: ev.clientY,
+          ox: g.byId[id].x, oy: g.byId[id].y, moved: false
+        };
+        el.classList.add('dragging');
+      });
+    });
+
+    window.addEventListener('mousemove', function (ev) {
+      if (!starDrag) return;
+      var dx = ev.clientX - starDrag.sx, dy = ev.clientY - starDrag.sy;
+      if (!starDrag.moved && Math.abs(dx) + Math.abs(dy) > 4) starDrag.moved = true;
+      if (!starDrag.moved) return;
+      var rect = svg.getBoundingClientRect();
+      starDrag.node.x = starDrag.ox + dx / rect.width * vb.w;
+      starDrag.node.y = starDrag.oy + dy / rect.height * vb.h;
+      moveStar(starDrag.node, starDrag.el);
+    });
+    window.addEventListener('mouseup', function () {
+      if (!starDrag) return;
+      var d = starDrag;
+      starDrag = null;
+      d.el.classList.remove('dragging');
+      if (!d.moved) return;
+      suppressClick = true;
+      posMap[d.id] = [Math.round(d.node.x), Math.round(d.node.y)];
+      savePos(posMap);
+      U.toast('已固定「' + d.node.name + '」的位置（点「重置布局」可还原自动排布）', 'info', 2200);
+    });
+
+    /* 拖动过的星用 pointer 光标提示 */
+    U.$$('.star', svg).forEach(function (el) {
+      var id = el.getAttribute('data-id');
+      if (posMap[id]) el.classList.add('pinned');
+    });
 
     var drag = null;
     stage.addEventListener('mousedown', function (e) {
@@ -522,9 +627,17 @@
     });
     var rst = U.$('#sm-reset');
     if (rst) rst.onclick = function () {
-      vb = { x: -30, y: -30, w: W + 60, h: H + 60 };
+      vb = { x: -PAD, y: -PAD, w: W + PAD * 2, h: H + PAD * 2 };
       applyVb(); clearHl();
     };
+    var rp = U.$('#sm-reset-pos');
+    if (rp) rp.onclick = function () {
+      clearPos();
+      U.toast('已恢复自动排布', 'ok');
+      global.CSP.app.refresh();
+    };
+    var fit = U.$('#sm-fit');
+    if (fit) fit.onclick = function () { global.CSP.app.refresh(); };
 
     /* ---- 搜索 ---- */
     var se = U.$('#sm-search');
