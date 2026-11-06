@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSP-S 2026 · 第二轮考点作战系统</title>
+<style>
+:root{
+  --bg:#05070f;
+  --bg2:#0a0f1e;
+  --panel:rgba(13,20,40,0.82);
+  --line:#1e3a5f;
+  --cyan:#00e5ff;
+  --magenta:#ff2bd6;
+  --green:#3dff9a;
+  --yellow:#ffe66d;
+  --purple:#b07cff;
+  --red:#ff5c7a;
+  --text:#c8d6e5;
+  --dim:#5f7ea6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:"Cascadia Code","Consolas","JetBrains Mono","Microsoft YaHei",monospace;
+  line-height:1.65;
+  overflow-x:hidden;
+  position:relative;
+}
+/* ===== 背景扫描线 & 网格 ===== */
+body::before{
+  content:"";
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(0deg, rgba(0,229,255,0.025) 0 2px, transparent 2px 4px),
+    linear-gradient(135deg, #05070f 0%, #0a1020 55%, #0d0718 100%);
+}
+body::after{
+  content:"";
+  position:fixed;left:0;right:0;height:140px;top:0;z-index:0;pointer-events:none;
+  background:linear-gradient(180deg, rgba(0,229,255,0.08), transparent);
+  animation:scan 7s linear infinite;
+}
+@keyframes scan{
+  0%{transform:translateY(-140px)}
+  100%{transform:translateY(100vh)}
+}
+.wrap{position:relative;z-index:1;max-width:1280px;margin:0 auto;padding:28px 20px 80px}
+
+/* ===== 终端头部 ===== */
+.term{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 0 28px rgba(0,229,255,0.12), inset 0 0 40px rgba(0,229,255,0.03);
+  margin-bottom:34px;
+  backdrop-filter:blur(4px);
+}
+.term-bar{
+  display:flex;align-items:center;gap:8px;
+  padding:10px 14px;
+  background:linear-gradient(90deg,#10182e,#0d1322);
+  border-bottom:1px solid var(--line);
+}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+.term-title{color:var(--dim);font-size:12px;margin-left:10px;letter-spacing:1px}
+.term-body{padding:20px 22px;min-height:120px}
+.cmd{color:var(--green);font-weight:700}
+.prompt{color:var(--cyan)}
+.cursor{display:inline-block;width:9px;height:16px;background:var(--cyan);vertical-align:middle;animation:blink 1s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.type-line{white-space:pre-wrap;font-size:14px}
+
+/* ===== 标题 ===== */
+.hero{text-align:center;margin:14px 0 8px}
+.hero h1{
+  font-size:clamp(26px,5vw,46px);
+  background:linear-gradient(90deg,var(--cyan),var(--purple),var(--magenta),var(--cyan));
+  background-size:300% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:flow 6s linear infinite;
+  letter-spacing:3px;
+  text-shadow:0 0 30px rgba(0,229,255,0.25);
+}
+@keyframes flow{0%{background-position:0% 0}100%{background-position:300% 0}}
+.hero .sub{color:var(--dim);font-size:14px;letter-spacing:4px;margin-top:6px}
+
+/* ===== 导航 ===== */
+.nav{
+  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:24px 0 34px;
+}
+.nav a{
+  color:var(--cyan);text-decoration:none;font-size:13px;
+  border:1px solid var(--line);padding:7px 16px;border-radius:6px;
+  transition:all .25s;background:rgba(0,229,255,0.04);
+}
+.nav a:hover{background:rgba(0,229,255,0.15);box-shadow:0 0 14px rgba(0,229,255,0.35);transform:translateY(-2px)}
+
+/* ===== 区块 ===== */
+section{margin-bottom:44px}
+.sec-head{
+  display:flex;align-items:center;gap:12px;margin-bottom:18px;
+}
+.sec-head .tag{
+  color:var(--bg);background:var(--cyan);font-weight:800;font-size:12px;
+  padding:3px 10px;border-radius:4px;letter-spacing:1px;
+}
+.sec-head h2{
+  font-size:20px;color:#eaf6ff;letter-spacing:2px;border-left:3px solid var(--cyan);
+  padding-left:12px;text-shadow:0 0 12px rgba(0,229,255,0.4);
+}
+.sec-head .code{color:var(--dim);font-size:12px;margin-left:auto}
+
+/* ===== 信息卡 ===== */
+.grid{display:grid;gap:16px}
+.grid-4{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(420px,1fr))}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:18px 20px;position:relative;overflow:hidden;
+  transition:transform .25s, box-shadow .25s;
+}
+.card::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--cyan),transparent 80%);
+}
+.card:hover{transform:translateY(-4px);box-shadow:0 8px 26px rgba(0,229,255,0.14)}
+.card .k{color:var(--dim);font-size:12px;letter-spacing:2px;text-transform:uppercase}
+.card .v{color:#eaf6ff;font-size:15px;margin-top:6px;font-weight:700}
+.card .v.hot{color:var(--green)}
+.card .v.warn{color:var(--yellow)}
+.card .v.alert{color:var(--magenta)}
+.card .extra{color:var(--dim);font-size:12px;margin-top:5px}
+
+/* ===== 统计条形 ===== */
+.stat-row{display:flex;align-items:center;gap:10px;margin:8px 0}
+.stat-name{width:150px;flex-shrink:0;color:var(--text);font-size:13px;text-align:right}
+.stat-bar-bg{flex:1;height:16px;background:rgba(255,255,255,0.06);border:1px solid var(--line);border-radius:4px;overflow:hidden;position:relative}
+.stat-bar{height:100%;border-radius:3px;position:relative;transition:width 1.2s ease}
+.stat-bar span{position:absolute;right:6px;top:0;font-size:11px;color:#04121f;font-weight:800;line-height:16px}
+.stat-pct{width:52px;color:var(--cyan);font-size:13px;text-align:right}
+
+/* ===== 表格 ===== */
+table{width:100%;border-collapse:collapse;font-size:13px;background:var(--panel);border-radius:10px;overflow:hidden}
+th{
+  background:linear-gradient(90deg,rgba(0,229,255,0.16),rgba(176,124,255,0.16));
+  color:#eaf6ff;padding:10px 12px;text-align:left;letter-spacing:1px;border-bottom:1px solid var(--line);
+}
+td{padding:9px 12px;border-bottom:1px solid rgba(30,58,95,0.4);vertical-align:top}
+tr:hover td{background:rgba(0,229,255,0.05)}
+.pill{display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;border:1px solid}
+.pill.cyan{color:var(--cyan);border-color:var(--cyan)}
+.pill.magenta{color:var(--magenta);border-color:var(--magenta)}
+.pill.green{color:var(--green);border-color:var(--green)}
+.pill.yellow{color:var(--yellow);border-color:var(--yellow)}
+.pill.purple{color:var(--purple);border-color:var(--purple)}
+
+/* ===== 卡片网络 ===== */
+.cardnet-note{
+  background:rgba(0,229,255,0.05);border:1px dashed var(--line);border-radius:8px;
+  padding:12px 16px;font-size:12px;color:var(--dim);margin-bottom:18px;
+}
+.kp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.kp-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:0;overflow:hidden;
+  transition:all .25s;cursor:pointer;position:relative;
+}
+.kp-card:hover{transform:translateY(-5px);box-shadow:0 10px 30px rgba(255,43,214,0.15);border-color:var(--magenta)}
+.kp-card.kp-selected{box-shadow:0 0 0 2px var(--cyan), 0 10px 30px rgba(0,229,255,0.2);border-color:var(--cyan)}
+.kp-head{
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px;justify-content:space-between;
+}
+.kp-head .name{color:#eaf6ff;font-weight:800;font-size:14px}
+.kp-head .lv{font-size:11px}
+.kp-body{padding:12px 16px;font-size:12px;color:var(--dim)}
+.kp-body .desc{margin-bottom:8px;color:#9db4cc}
+.kp-body .taglist{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.kp-body .tag{font-size:10px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);color:var(--dim)}
+.kp-links{border-top:1px dashed var(--line);padding:9px 16px;font-size:11px;color:var(--dim)}
+.kp-links b{color:var(--cyan);font-weight:700}
+.kp-links .lnk{color:var(--purple);margin-right:8px;cursor:pointer;text-decoration:underline dotted}
+.kp-links .lnk:hover{color:var(--magenta)}
+
+/* 真题卡片 */
+prob-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:16px}
+.prob-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;position:relative;
+  transition:all .25s;cursor:pointer;
+}
+.prob-card:hover{transform:translateY(-4px);box-shadow:0 8px 28px rgba(176,124,255,0.18);border-color:var(--purple)}
+.prob-card.prob-selected{box-shadow:0 0 0 2px var(--magenta), 0 10px 30px rgba(255,43,214,0.2);border-color:var(--magenta)}
+.prob-top{
+  padding:10px 16px;display:flex;align-items:center;gap:10px;justify-content:space-between;
+  background:linear-gradient(90deg,rgba(176,124,255,0.12),transparent);
+  border-bottom:1px solid var(--line);
+}
+.prob-top .year{color:var(--yellow);font-weight:800;font-size:15px}
+.prob-top .no{color:var(--purple);font-weight:800;font-size:13px}
+.prob-top .name{color:#eaf6ff;font-weight:700;font-size:14px;text-align:right}
+.prob-body{padding:12px 16px;font-size:12px;color:var(--dim)}
+.prob-body .point{margin:4px 0;color:#9db4cc}
+.prob-body .point b{color:var(--green);font-weight:700}
+.prob-kp{padding:8px 16px;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.prob-kp .chip{
+  font-size:11px;padding:3px 10px;border-radius:14px;border:1px solid var(--cyan);
+  color:var(--cyan);cursor:pointer;transition:all .2s;
+}
+.prob-kp .chip:hover{background:rgba(0,229,255,0.15)}
+
+/* 关联面板 */
+.link-panel{
+  position:sticky;bottom:0;background:rgba(5,10,20,0.94);border:1px solid var(--cyan);
+  border-radius:10px;padding:14px 18px;margin-top:22px;
+  box-shadow:0 -6px 30px rgba(0,229,255,0.15);display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+  backdrop-filter:blur(6px);z-index:10;
+}
+.link-panel .lp-title{color:var(--cyan);font-weight:800;font-size:13px;letter-spacing:1px}
+.link-panel .lp-item{font-size:12px;color:var(--text)}
+.link-panel .arrow{color:var(--magenta);font-weight:900}
+.link-panel .lp-clear{
+  margin-left:auto;color:var(--red);cursor:pointer;font-size:12px;border:1px solid var(--red);
+  padding:4px 12px;border-radius:6px;transition:all .2s;
+}
+.link-panel .lp-clear:hover{background:rgba(255,92,122,0.15)}
+
+/* ===== 策略列表 ===== */
+.strat-list{list-style:none}
+.strat-list li{
+  padding:12px 16px;border:1px solid var(--line);border-radius:8px;margin-bottom:10px;
+  background:var(--panel);font-size:13px;
+}
+.strat-list li b{color:var(--cyan)}
+.strat-list li .tip{color:var(--dim);display:block;margin-top:4px;font-size:12px}
+
+/* ===== 检查清单 ===== */
+.checklist{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px}
+.checklist .item{
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  padding:11px 14px;font-size:12px;color:var(--text);
+}
+.checklist .item::before{content:"▸ ";color:var(--green)}
+
+/* ===== 代码块 ===== */
+pre.code{
+  background:#060b16;border:1px solid var(--line);border-radius:8px;
+  padding:16px 18px;overflow-x:auto;font-size:12.5px;line-height:1.7;
+  box-shadow:inset 0 0 30px rgba(0,229,255,0.04);
+}
+pre.code .c-kw{color:var(--magenta);font-weight:700}
+pre.code .c-fn{color:var(--yellow)}
+pre.code .c-ty{color:var(--purple)}
+pre.code .c-st{color:var(--green)}
+pre.code .c-cm{color:var(--dim);font-style:italic}
+pre.code .c-num{color:var(--cyan)}
+
+/* ===== 页脚 ===== */
+footer{
+  margin-top:60px;padding-top:20px;border-top:1px solid var(--line);
+  text-align:center;color:var(--dim);font-size:12px;letter-spacing:2px;
+}
+.tagline{color:var(--cyan);margin-top:8px;font-size:13px}
+
+@media(max-width:700px){
+  .stat-name{width:104px;font-size:11px}
+  .grid-2{grid-template-columns:1fr}
+  .term-body{padding:14px}
+}
+
+/* ===== 在线刷题 ===== */
+.quiz-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
+.quiz-stat-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-align:center}
+.quiz-stat-card .qsv{font-size:26px;font-weight:900;color:var(--cyan);text-shadow:0 0 18px rgba(0,229,255,0.5)}
+.quiz-stat-card .qsv.green{color:var(--green)}
+.quiz-stat-card .qsv.red{color:var(--red)}
+.quiz-stat-card .qsv.yellow{color:var(--yellow)}
+.quiz-stat-card .qsk{color:var(--dim);font-size:11px;letter-spacing:2px;margin-top:4px}
+.quiz-filters{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+  background:rgba(0,229,255,0.05);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;margin-bottom:16px;
+}
+.quiz-filters .qf-label{color:var(--dim);font-size:12px;letter-spacing:1px}
+.qf-select{
+  background:#0a1220;color:var(--text);border:1px solid var(--line);border-radius:6px;
+  padding:6px 10px;font-size:12.5px;outline:none;min-width:130px;
+}
+.qf-select:focus{border-color:var(--cyan);box-shadow:0 0 10px rgba(0,229,255,0.25)}
+.btn{
+  display:inline-block;padding:7px 16px;border-radius:6px;font-size:12.5px;cursor:pointer;
+  border:1px solid var(--cyan);color:var(--cyan);background:rgba(0,229,255,0.06);
+  transition:all .2s;letter-spacing:1px;
+}
+.btn:hover{background:rgba(0,229,255,0.18);box-shadow:0 0 14px rgba(0,229,255,0.35)}
+.btn.green{border-color:var(--green);color:var(--green);background:rgba(61,255,154,0.06)}
+.btn.green:hover{background:rgba(61,255,154,0.16)}
+.btn.red{border-color:var(--red);color:var(--red);background:rgba(255,92,122,0.06)}
+.btn.red:hover{background:rgba(255,92,122,0.16)}
+.btn.purple{border-color:var(--purple);color:var(--purple);background:rgba(176,124,255,0.06)}
+.btn.purple:hover{background:rgba(176,124,255,0.16)}
+.quiz-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px}
+.quiz-card{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  transition:all .25s;position:relative;
+}
+.quiz-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,229,255,0.12)}
+.quiz-card.qc-done{border-color:rgba(61,255,154,0.55)}
+.quiz-card.qc-done::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--green),transparent 70%)}
+.quiz-card.qc-wrong{border-color:rgba(255,92,122,0.6)}
+.quiz-card.qc-wrong::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),transparent 70%)}
+.quiz-card.random-hit{box-shadow:0 0 0 2px var(--yellow), 0 8px 24px rgba(255,230,109,0.25);border-color:var(--yellow)}
+.qc-top{
+  padding:10px 14px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid var(--line);background:linear-gradient(90deg,rgba(0,229,255,0.08),transparent);
+}
+.qc-no{color:var(--cyan);font-weight:900;font-size:16px}
+.qc-tag{font-size:11px}
+.qc-cat{color:#9db4cc;font-size:12px;margin-left:auto}
+.qc-body{padding:10px 14px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.qc-status{margin-left:auto;font-size:11px;letter-spacing:1px}
+.qc-status.s-done{color:var(--green)}
+.qc-status.s-wrong{color:var(--red)}
+.qc-status.s-none{color:var(--dim)}
+.qc-actions{padding:10px 14px;border-top:1px dashed var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.ans-panel{
+  border-top:1px solid var(--line);padding:12px 14px;display:none;
+  background:rgba(5,10,20,0.7);
+}
+.ans-panel.open{display:block}
+.ans-hint{
+  font-size:12px;color:#9db4cc;line-height:1.7;
+  background:rgba(176,124,255,0.06);border-left:3px solid var(--purple);
+  padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:10px;
+}
+.ans-btns{display:flex;gap:8px;flex-wrap:wrap}
+.quiz-empty{color:var(--dim);font-size:13px;padding:30px;text-align:center;border:1px dashed var(--line);border-radius:10px}
+.diff-pill{font-size:10.5px;padding:2px 9px;border-radius:12px;border:1px solid}
+.diff-1,.diff-2,.diff-3{color:var(--green);border-color:var(--green)}
+.diff-4,.diff-5{color:var(--cyan);border-color:var(--cyan)}
+.diff-6{color:var(--purple);border-color:var(--purple)}
+.diff-7{color:var(--yellow);border-color:var(--yellow)}
+.diff-8,.diff-9,.diff-10{color:var(--magenta);border-color:var(--magenta)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===== 终端头部 ===== -->
+  <div class="term">
+    <div class="term-bar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="term-title">csp-s-2026-ops — root@online-judge:~/review</span>
+    </div>
+    <div class="term-body">
+      <div class="type-line"><span class="prompt">user@oj:~$</span> <span class="cmd">init --system csp-s-2026 --module round2</span></div>
+      <div class="type-line" style="margin-top:8px"><span class="prompt">[boot]</span> 加载考点知识库 <span style="color:var(--cyan)">OK</span>  ·  真题语料 2019-2025 <span style="color:var(--cyan)">OK</span>  ·  预测引擎 <span style="color:var(--cyan)">OK</span></div>
+      <div class="type-line" style="margin-top:4px"><span class="prompt">[load]</span> 洛谷题单 778 题 <span style="color:var(--green)">OK</span> · 刷题引擎 <span style="color:var(--cyan)">OK</span></div>
+      <div class="type-line" style="margin-top:4px"><span class="prompt">[info]</span> 剩余天数 <span style="color:var(--yellow)">29</span> 天 · 考试模式 <span style="color:var(--magenta)">REAL-TIME CODING</span> · 目标 <span style="color:var(--green)">AC × 4</span></div>
+      <div class="type-line" style="margin-top:4px"><span class="prompt">user@oj:~$</span> <span class="cmd">start --attack-plan</span><span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <!-- ===== 标题 ===== -->
+  <div class="hero">
+    <h1>CSP-S 2026 · 第二轮考点作战系统</h1>
+    <div class="sub">// ALGORITHM KNOWLEDGE GRID · 2019-2025 真题数据驱动 //</div>
+  </div>
+
+  <!-- ===== 导航 ===== -->
+  <nav class="nav">
+    <a href="#info">考试关键信息</a>
+    <a href="#stat">历年知识点分布</a>
+    <a href="#predict">2026 考点预测</a>
+    <a href="#strategy">备考策略</a>
+    <a href="#knowledge">知识点卡片</a>
+    <a href="#problems">真题题目卡片</a>
+    <a href="#quiz">在线刷题</a>
+  </nav>
+
+  <!-- ===== 1 考试关键信息 ===== -->
+  <section id="info">
+    <div class="sec-head"><span class="tag">INFO</span><h2>考试关键信息</h2><span class="code">// mission_brief</span></div>
+    <div class="grid grid-4">
+      <div class="card"><div class="k">DATE</div><div class="v hot">2026-10-31（周六）</div><div class="extra">距离开考 29 天</div></div>
+      <div class="card"><div class="k">TIME</div><div class="v hot">14:30 — 18:30</div><div class="extra">共 4 小时 · 下午场</div></div>
+      <div class="card"><div class="k">PROBLEMS</div><div class="v hot">4 道编程题</div><div class="extra">T1-T4 难度梯度递进</div></div>
+      <div class="card"><div class="k">ENV</div><div class="v">NOI Linux 2.0</div><div class="extra">C++（部分地区支持 Python）</div></div>
+      <div class="card"><div class="k">SCORE</div><div class="v warn">总分 400</div><div class="extra">每题 100 分 · 部分分梯度设置</div></div>
+      <div class="card"><div class="k">ROUTINE</div><div class="v">freopen 文件读写</div><div class="extra">in/out 文件名必须与题目一致</div></div>
+      <div class="card"><div class="k">CHECK-IN</div><div class="v warn">开考 15 分钟后禁止入场</div><div class="extra">建议提前 1 小时到达考点</div></div>
+      <div class="card"><div class="k">FOLDER</div><div class="v alert">目录名 = 准考证号</div><div class="extra">每题独立子目录 · 只提交源代码</div></div>
+    </div>
+  </section>
+
+  <!-- ===== 2 历年知识点分布统计 ===== -->
+  <section id="stat">
+    <div class="sec-head"><span class="tag">STATS</span><h2>历年（2019-2025）真题知识点分布统计</h2><span class="code">// 7-year_analysis</span></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="k">KNOWLEDGE_FREQUENCY — 按 30 题归一化出现比例</div>
+        <div style="margin-top:10px">
+          <div class="stat-row"><span class="stat-name">动态规划 DP</span><div class="stat-bar-bg"><div class="stat-bar" style="width:46.7%;background:linear-gradient(90deg,#00e5ff,#b07cff)"><span>14</span></div></div><span class="stat-pct">46.7%</span></div>
+          <div class="stat-row"><span class="stat-name">贪心</span><div class="stat-bar-bg"><div class="stat-bar" style="width:40%;background:linear-gradient(90deg,#3dff9a,#00e5ff)"><span>12</span></div></div><span class="stat-pct">40.0%</span></div>
+          <div class="stat-row"><span class="stat-name">图论（不含树）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:30%;background:linear-gradient(90deg,#ff2bd6,#b07cff)"><span>9</span></div></div><span class="stat-pct">30.0%</span></div>
+          <div class="stat-row"><span class="stat-name">树（重心/DFS）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:26.7%;background:linear-gradient(90deg,#ffe66d,#ff2bd6)"><span>8</span></div></div><span class="stat-pct">26.7%</span></div>
+          <div class="stat-row"><span class="stat-name">模拟（含大模拟）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:23.3%;background:linear-gradient(90deg,#00e5ff,#3dff9a)"><span>7</span></div></div><span class="stat-pct">23.3%</span></div>
+          <div class="stat-row"><span class="stat-name">数学 / 组合数学</span><div class="stat-bar-bg"><div class="stat-bar" style="width:20%;background:linear-gradient(90deg,#b07cff,#ff2bd6)"><span>6</span></div></div><span class="stat-pct">20.0%</span></div>
+          <div class="stat-row"><span class="stat-name">数据结构（栈/队列）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:16.7%;background:linear-gradient(90deg,#3dff9a,#ffe66d)"><span>5</span></div></div><span class="stat-pct">16.7%</span></div>
+          <div class="stat-row"><span class="stat-name">位运算</span><div class="stat-bar-bg"><div class="stat-bar" style="width:13.3%;background:linear-gradient(90deg,#ff5c7a,#ff2bd6)"><span>4</span></div></div><span class="stat-pct">13.3%</span></div>
+          <div class="stat-row"><span class="stat-name">字符串（含哈希）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:13.3%;background:linear-gradient(90deg,#ffe66d,#00e5ff)"><span>4</span></div></div><span class="stat-pct">13.3%</span></div>
+          <div class="stat-row"><span class="stat-name">搜索（BFS/DFS）</span><div class="stat-bar-bg"><div class="stat-bar" style="width:10%;background:linear-gradient(90deg,#b07cff,#3dff9a)"><span>3</span></div></div><span class="stat-pct">10.0%</span></div>
+          <div class="stat-row"><span class="stat-name">构造</span><div class="stat-bar-bg"><div class="stat-bar" style="width:6.7%;background:linear-gradient(90deg,#ff2bd6,#ff5c7a)"><span>2</span></div></div><span class="stat-pct">6.7%</span></div>
+          <div class="stat-row"><span class="stat-name">博弈</span><div class="stat-bar-bg"><div class="stat-bar" style="width:6.7%;background:linear-gradient(90deg,#00e5ff,#b07cff)"><span>2</span></div></div><span class="stat-pct">6.7%</span></div>
+          <div class="stat-row"><span class="stat-name">网络流</span><div class="stat-bar-bg"><div class="stat-bar" style="width:3.3%;background:linear-gradient(90deg,#ffe66d,#ff5c7a)"><span>1</span></div></div><span class="stat-pct">3.3%</span></div>
+        </div>
+        <div class="extra" style="margin-top:8px">注：部分题目融合多个知识点，总和超过 30 题、百分比总和超过 100%。</div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:16px">
+          <div class="k">板块构成 — CSP-S 2025 实测</div>
+          <table style="margin-top:10px">
+            <tr><th>板块</th><th>知识点数</th><th>占比趋势</th></tr>
+            <tr><td>算法</td><td>17</td><td><span class="pill cyan">核心主战场</span></td></tr>
+            <tr><td>数据结构</td><td>6</td><td><span class="pill purple">中高频</span></td></tr>
+            <tr><td>C++ 程序设计</td><td>8</td><td><span class="pill green">基础托底</span></td></tr>
+            <tr><td>数学与其他</td><td>5</td><td><span class="pill yellow">思维提升</span></td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <div class="k">趋势研判 — 7 年递进</div>
+          <ul class="strat-list">
+            <li><b>DP 统治地位稳固</b><span class="tip">占比稳定在 40%+，每年至少两道 DP；难度从区间/树形进阶到单调队列、矩阵快速幂、状态压缩优化。</span></li>
+            <li><b>字符串哈希成新热点</b><span class="tip">2022-2025 反复出现（消消乐、谐音替换），哈希、Trie、KMP 组合登场。</span></li>
+            <li><b>贪心进入进阶形态</b><span class="tip">2024-2025 连续出现"后悔贪心"（反悔堆），常与排序、数据结构结合。</span></li>
+            <li><b>难度系数上移</b><span class="tip">2025 年 6 级难度知识点最多，部分知识点达 7-8 级（状态压缩 DP、扫描线、容斥原理）。</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 3 2026 考点预测 ===== -->
+  <section id="predict">
+    <div class="sec-head"><span class="tag">PREDICT</span><h2>2026 考点预测与命题方向</h2><span class="code">// forecast_model_v2026</span></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="k">T1 送分题 · 保底 100 分</div>
+        <table style="margin-top:10px">
+          <tr><th>预测方向</th><th>依据 / 真题规律</th><th>命中率</th></tr>
+          <tr><td>模拟 / 大模拟</td><td>儒略日、结构体等稳定出现在 T1/T3</td><td><span class="pill green">极高</span></td></tr>
+          <tr><td>贪心 + 排序</td><td>2025 club（社团招新）贪心 + 计数排序</td><td><span class="pill green">极高</span></td></tr>
+          <tr><td>位运算 / 集合</td><td>动物园、优秀拆分类模型</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>基础枚举 / 递推</td><td>入门算法模块稳定覆盖</td><td><span class="pill cyan">高</span></td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="k">T2 基础题 · 稳定拿分</div>
+        <table style="margin-top:10px">
+          <tr><th>预测方向</th><th>依据 / 真题规律</th><th>命中率</th></tr>
+          <tr><td>二分答案</td><td>超速检测：物理建模 + 二分 + 贪心</td><td><span class="pill green">极高</span></td></tr>
+          <tr><td>区间 DP 计数</td><td>括号序列（2021）高难度区间 DP</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>MST + 子集枚举</td><td>道路修复（2025）：先 MST 再枚举</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>数学建模 / 分类讨论</td><td>策略游戏：ST 表 / 线段树区间最值</td><td><span class="pill yellow">中高</span></td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="k">T3 分层题 · 区分度核心</div>
+        <table style="margin-top:10px">
+          <tr><th>预测方向</th><th>依据 / 真题规律</th><th>命中率</th></tr>
+          <tr><td>DP + 优化技巧</td><td>染色：全局标记 / 线段树优化 O(n²)→O(n)</td><td><span class="pill green">极高</span></td></tr>
+          <tr><td>字符串（哈希/Trie/KMP）</td><td>谐音替换：Trie + 树状数组 + 扫描线</td><td><span class="pill green">极高</span></td></tr>
+          <tr><td>图论进阶（拓扑/最短路变体）</td><td>函数调用：拓扑 + 贡献传递</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>随机化 / 哈希维护状态</td><td>星战：随机权值哈希维护图状态</td><td><span class="pill yellow">中</span></td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="k">T4 压轴题 · 冲刺高分</div>
+        <table style="margin-top:10px">
+          <tr><th>预测方向</th><th>依据 / 真题规律</th><th>命中率</th></tr>
+          <tr><td>树形 DP / 树上问题</td><td>括号树、树的重心连续考察</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>状压 DP / 计数 DP</td><td>Emiya 家今天的饭：容斥 + DP；n≤20 集合问题</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>DP 优化（单调队列/矩阵快速幂）</td><td>高阶优化成为高分关键</td><td><span class="pill cyan">高</span></td></tr>
+          <tr><td>数据结构 + 思维综合</td><td>线段树、平衡树、树链剖分综合应用</td><td><span class="pill yellow">中</span></td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="k">PROBABILITY MATRIX — 2026 必考 / 高概率知识矩阵</div>
+      <table style="margin-top:10px">
+        <tr><th>优先级</th><th>知识点</th><th>说明</th></tr>
+        <tr><td><span class="pill magenta">S · 必考</span></td><td>动态规划（区间 / 树形 / 状压 / 计数 + 优化）</td><td>每年至少 2 题，占比 40%+，优化技巧直接决定分数上限</td></tr>
+        <tr><td><span class="pill magenta">S · 必考</span></td><td>贪心（含后悔贪心 / 排序贪心）</td><td>7 年出现 12 次，2024-2025 连续出现进阶形式</td></tr>
+        <tr><td><span class="pill cyan">A · 高概率</span></td><td>字符串（哈希 / Trie / KMP）</td><td>2022-2025 反复出现，已成新热点</td></tr>
+        <tr><td><span class="pill cyan">A · 高概率</span></td><td>图论 / 树（最短路 / 拓扑 / MST / 树上 DP）</td><td>中高难度题常见载体，模板必须熟练</td></tr>
+        <tr><td><span class="pill cyan">A · 高概率</span></td><td>数据结构（栈 / 线段树 / 优先队列 / 并查集）</td><td>栈匹配 + 线段树优化 DP 两大经典组合</td></tr>
+        <tr><td><span class="pill yellow">B · 中概率</span></td><td>模拟（含大模拟） / 二分答案 / 数学组合 / 位运算</td><td>T1/T2 稳定得分来源，也是部分分保障</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===== 4 备考策略 ===== -->
+  <section id="strategy">
+    <div class="sec-head"><span class="tag">STRATEGY</span><h2>备考策略 · 29 天冲刺路线</h2><span class="code">// sprint_plan</span></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="k">四阶段冲刺（按周拆解）</div>
+        <ul class="strat-list" style="margin-top:10px">
+          <li><b>阶段一 · 基础模板速成（7 天）</b><span class="tip">链式前向星、Dijkstra、单调栈/队列、Tarjan 缩点、匈牙利、KMP、字符串哈希、Trie、凸包模板 20 分钟无 bug 打完。</span></li>
+          <li><b>阶段二 · 综合训练（8 天）</b><span class="tip">图论综合（最短路+Tarjan+匹配）、DP 综合（区间/树形/单调队列优化）、字符串综合（KMP+哈希+后缀数组）、数学（高斯消元/矩阵快速幂）。</span></li>
+          <li><b>阶段三 · 模拟实战（8 天）</b><span class="tip">每天一套 2019-2022 真题 + 高质量模拟赛题单；重点练 T3 拿部分分策略（暴力分、剪枝）。</span></li>
+          <li><b>阶段四 · 总复习（考前 7 天）</b><span class="tip">查漏补缺 + 模板背诵 + 默写 freopen/BFS/DP 模板保持手感 + 复盘 WA 错题 + 心态调整。</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="k">考场实战策略</div>
+        <ul class="strat-list" style="margin-top:10px">
+          <li><b>时间分配</b><span class="tip">第 1 小时通读 4 题，先攻最简单题保底分；第 2-3 小时突破中等题；剩余时间写暴力部分分 + 全面检查。</span></li>
+          <li><b>部分分技巧</b><span class="tip">完全不会的压轴题：小数据范围枚举/DFS 暴力、特殊边界针对性代码，可拿 30%-60% 测试点分。</span></li>
+          <li><b>T2 目标</b><span class="tip">40-60 分钟内稳定满分或接近满分：二分答案、贪心、区间 DP 三类练透。</span></li>
+          <li><b>T3 策略</b><span class="tip">先快速拿暴力分（通常 40-60 分），再判断剩余时间能否完成正解；正解需要没练过的结构就保住暴力分。</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="k">防爆零检查清单 · CHECKLIST</div>
+      <div class="checklist" style="margin-top:12px">
+        <div class="item">根文件夹名称必须与准考证号完全一致</div>
+        <div class="item">每题的文件夹名、源代码文件名与题目英文名完全匹配</div>
+        <div class="item">确认 freopen 未被注释，能正常读写 .in / .out</div>
+        <div class="item">提交前删除所有调试代码，只保留源文件</div>
+        <div class="item">多组数据测试后重置全局变量与数组</div>
+        <div class="item">严格控制循环边界，避免数组越界</div>
+        <div class="item">1e8 以上操作必然超时，勿用 O(n²) 处理大数据量</div>
+        <div class="item">输出格式严格匹配，不多写 / 不漏空格换行</div>
+        <div class="item">提前 1 小时到考点，开考 15 分钟后禁止入场</div>
+        <div class="item">带齐证件：身份证件 + 准考证 + 学校证明</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="k">模板速记 · CORE TEMPLATES</div>
+      <pre class="code" style="margin-top:10px"><span class="c-cm">// 核心模板：读入输出 + 二分答案三板斧 + 01 背包</span>
+<span class="c-kw">#include</span> &lt;bits/stdc++.h&gt;
+<span class="c-kw">using namespace</span> std;
+<span class="c-ty">int</span> n, m;
+
+<span class="c-cm">// 1. 文件读写（必须）</span>
+<span class="c-ty">int</span> <span class="c-fn">main</span>() {
+    freopen(<span class="c-st">"problem.in"</span>, <span class="c-st">"r"</span>, stdin);
+    freopen(<span class="c-st">"problem.out"</span>, <span class="c-st">"w"</span>, stdout);
+
+    <span class="c-cm">// 2. 二分答案：确定 check(mid) 含义 → 证明单调性 → 处理边界</span>
+    <span class="c-ty">int</span> l = <span class="c-num">0</span>, r = <span class="c-num">1e9</span>, ans = <span class="c-num">0</span>;
+    <span class="c-kw">while</span> (l &lt;= r) {
+        <span class="c-ty">int</span> mid = (l + r) &gt;&gt; <span class="c-num">1</span>;
+        <span class="c-kw">if</span> (<span class="c-fn">check</span>(mid)) ans = mid, l = mid + <span class="c-num">1</span>;
+        <span class="c-kw">else</span> r = mid - <span class="c-num">1</span>;
+    }
+
+    <span class="c-cm">// 3. 01 背包：每个数及其和不大时识别为背包</span>
+    <span class="c-ty">int</span> w[<span class="c-num">105</span>], v[<span class="c-num">105</span>], dp[<span class="c-num">10005</span>];
+    <span class="c-kw">for</span> (<span class="c-ty">int</span> i = <span class="c-num">1</span>; i &lt;= n; ++i)
+        <span class="c-kw">for</span> (<span class="c-ty">int</span> j = m; j &gt;= w[i]; --j)
+            dp[j] = max(dp[j], dp[j - w[i]] + v[i]);
+    <span class="c-kw">return</span> <span class="c-num">0</span>;
+}</pre>
+    </div>
+  </section>
+
+  <!-- ===== 5 知识点卡片 ===== -->
+  <section id="knowledge">
+    <div class="sec-head"><span class="tag">KNOWLEDGE</span><h2>知识点卡片</h2><span class="code">// knowledge_base · 12 modules</span></div>
+    <div class="cardnet-note">点击知识点卡片可高亮关联的真题卡片；点击真题卡片内的知识点标签可反向高亮该知识点。系统支持 <b style="color:var(--cyan)">双向关联联动</b>。</div>
+    <div class="kp-grid" id="kpGrid"></div>
+  </section>
+
+  <!-- ===== 6 真题题目卡片 ===== -->
+  <section id="problems">
+    <div class="sec-head"><span class="tag">PROBLEMS</span><h2>历年真题题目卡片</h2><span class="code">// problem_bank · 2019-2025</span></div>
+    <div class="cardnet-note">真题卡片展示年份、题号、考点标签；点击卡片右上角链接可查看对应知识点卡片的详细信息。</div>
+    <div class="kp-grid" id="probGrid" style="grid-template-columns:repeat(auto-fill,minmax(360px,1fr))"></div>
+  </section>
+
+
+  <!-- ===== 7 在线刷题 ===== -->
+  <section id="quiz">
+    <div class="sec-head"><span class="tag">QUIZ</span><h2>在线刷题训练场 · 洛谷题单</h2><span class="code">// problem_bank · 778 problems</span></div>
+    <div class="cardnet-note">
+      数据源：CSP-JS+NOI 题单 Excel（洛谷题号 + 知识点分类）。支持<b style="color:var(--cyan)">分类/难度筛选</b>、<b style="color:var(--green)">随机抽题</b>、<b style="color:var(--yellow)">在线作答自评</b>与<b style="color:var(--magenta)">进度/错题统计</b>。进度保存在本机浏览器，可一键重置。
+    </div>
+
+    <!-- 进度统计 -->
+    <div class="quiz-stat-grid" id="quizStats"></div>
+
+    <!-- 筛选栏 -->
+    <div class="quiz-filters">
+      <span class="qf-label">FILTER:</span>
+      <select class="qf-select" id="qfGroup">
+        <option value="ALL">全部组别</option>
+        <option value="CSP-J">CSP-J</option>
+        <option value="CSP-S">CSP-S+NOIP</option>
+        <option value="NOI">NOI</option>
+      </select>
+      <select class="qf-select" id="qfCat"><option value="ALL">全部知识点</option></select>
+      <select class="qf-select" id="qfDiff">
+        <option value="ALL">全部难度</option>
+        <option value="3">难度 1-3 · 入门</option>
+        <option value="5">难度 4-5 · 普及/提高</option>
+        <option value="6">难度 6 · 提高</option>
+        <option value="7">难度 7 · 省选</option>
+        <option value="8">难度 8+ · 省选/NOI</option>
+      </select>
+      <span class="btn green" onclick="randomQuiz(10)">RANDOM ×10</span>
+      <span class="btn purple" onclick="randomQuiz(5)">RANDOM ×5</span>
+      <span class="btn" onclick="resetFilter()">重置筛选</span>
+      <span class="btn red" onclick="resetQuizProgress()">重置进度</span>
+      <span class="qf-label" id="qfCount" style="margin-left:auto"></span>
+    </div>
+
+    <!-- 题目列表 -->
+    <div class="quiz-list" id="quizList"></div>
+  </section>
+
+  <!-- ===== 关联面板 ===== -->
+  <div class="link-panel" id="linkPanel">
+    <span class="lp-title">LINK TRACE</span>
+    <span class="lp-item" id="lpFrom">未选择来源</span>
+    <span class="arrow">⟶</span>
+    <span class="lp-item" id="lpTo">未选择目标</span>
+    <span class="lp-clear" onclick="clearLink()">CLEAR [ESC]</span>
+  </div>
+
+  <footer>
+    <div>GENERATED BY CSP-S 2026 REVIEW GRID · 数据来源：CCF 官方分析报告 / 新东方优编程 / 四季读书网 / CSDN / 洛谷</div>
+    <div class="tagline">// MAY THE AC BE WITH YOU · 2026-10-31 14:30 READY</div>
+  </footer>
+</div>
+
+<script>
+/* ================= 数据层 ================= */
+const KNOWLEDGE = [
+  {id:"kp-dp", name:"动态规划 DP", lv:"S · 必考", color:"cyan", desc:"近七年每年至少两道 DP，占比 46.7%，CSP-S 灵魂考点。2025 年难度系数集中在 4-8 级，优化技巧成为高分关键。",
+   tags:["区间DP","树形DP","状压DP","计数DP","单调队列优化","矩阵快速幂优化","背包DP","线性DP"],
+   links:["p2019-1","p2019-2","p2020-1","p2020-2","p2021-1","p2021-2","p2022-1","p2022-2","p2023-1","p2023-2","p2024-1","p2025-1"]},
+  {id:"kp-greedy", name:"贪心", lv:"S · 必考", color:"green", desc:"7 年出现 12 次（40%），T1-T4 各位置均有出现。常与排序、数据结构、博弈结合；2024-2025 连续出现后悔贪心进阶形式。",
+   tags:["排序贪心","后悔贪心/反悔堆","区间覆盖","Huffman","贪心证明(交换邻项)"],
+   links:["p2019-1","p2019-3","p2020-1","p2021-2","p2022-1","p2023-1","p2024-1","p2024-3","p2025-1"]},
+  {id:"kp-graph", name:"图论（不含树）", lv:"A · 高概率", color:"purple", desc:"占比 30%。覆盖 BFS/最短路、拓扑排序、哈希判环；2025 道路修复考 MST + 子集枚举，函数调用考拓扑 + 贡献传递。",
+   tags:["最短路Dijkstra","堆优化","拓扑排序","并查集","最小生成树","强连通分量","二分图匹配"],
+   links:["p2020-2","p2021-1","p2021-3","p2022-3","p2024-2","p2025-2"]},
+  {id:"kp-tree", name:"树（重心/DFS）", lv:"A · 高概率", color:"yellow", desc:"占比 26.7%。集中在树的重心、括号树、树上 DP、DFS 序与欧拉序。中高难度题的常见载体。",
+   tags:["树的重心","树上DP","DFS序/欧拉序","LCA","括号树"],
+   links:["p2019-1","p2020-1","p2020-3","p2021-1","p2023-2"]},
+  {id:"kp-sim", name:"模拟（含大模拟）", lv:"A · 高概率", color:"green", desc:"占比 23.3%。大模拟（儒略日、结构体）通常出现在 T1/T3，考查代码实现与调试能力，是稳定得分的基础。",
+   tags:["大模拟","结构体模拟","日期模拟","状态机"],
+   links:["p2019-2","p2020-2","p2023-1"]},
+  {id:"kp-math", name:"数学 / 组合数学", lv:"A · 高概率", color:"cyan", desc:"占比 20%。包括位运算、容斥原理、组合计数、二分答案、矩阵快速幂、高斯消元等，常与 DP 或贪心结合提升思维难度。",
+   tags:["组合计数","容斥原理","矩阵快速幂","高斯消元","欧拉函数","乘法原理","排列组合"],
+   links:["p2020-3","p2021-2","p2022-1","p2023-2","p2024-3","p2025-4"]},
+  {id:"kp-ds", name:"数据结构（栈/队列）", lv:"A · 高概率", color:"purple", desc:"占比 16.7%。栈在括号匹配频繁出现；线段树优化 DP；优先队列、双端队列在构造类问题中发挥作用。",
+   tags:["栈","单调栈","线段树","树状数组","优先队列","双端队列","平衡树"],
+   links:["p2020-2","p2021-2","p2022-1","p2024-1","p2025-3"]},
+  {id:"kp-bit", name:"位运算", lv:"B · 中概率", color:"yellow", desc:"占比 13.3%。常见于 T1/T2 的集合建模：优秀拆分、动物园位运算 + 集合。n & (n-1) 判 2 的幂等技巧高频。",
+   tags:["二进制状态","集合表示","位运算技巧","快速幂"],
+   links:["p2022-2","p2023-1"]},
+  {id:"kp-string", name:"字符串（含哈希）", lv:"A · 高概率", color:"magenta", desc:"占比 13.3%，但 2022-2025 反复出现已成新热门。哈希用于消消乐、谐音替换；Trie、KMP、AC 自动机、后缀数组组合登场。",
+   tags:["字符串哈希","KMP","Trie字典树","AC自动机","后缀数组"],
+   links:["p2022-1","p2023-3","p2024-2","p2025-3"]},
+  {id:"kp-search", name:"搜索（BFS/DFS）", lv:"B · 中概率", color:"green", desc:"占比 10%。暴力拿部分分的救命通道：暴力 → 记忆化 → 剪枝；BFS/DFS 序、迭代加深、双向广搜、连通块染色。",
+   tags:["DFS","BFS","记忆化搜索","剪枝","Flood Fill"],
+   links:["p2019-2","p2020-1","p2025-4"]},
+  {id:"kp-construct", name:"构造", lv:"C · 低概率", color:"cyan", desc:"占比 6.7%。构造类问题要求极强的思维发散能力，常结合贪心与单调栈思想，如最小字典序构造。",
+   tags:["构造","字典序最小","贪心构造"],
+   links:["p2021-2","p2021-3"]},
+  {id:"kp-game", name:"博弈", lv:"C · 低概率", color:"yellow", desc:"占比 6.7%。与贪心、数据结构结合，考查对最优策略的抽象；SG 函数、博弈 DP 为进阶形态。",
+   tags:["博弈DP","SG函数","minimax"],
+   links:["p2021-2","p2024-2"]}
+];
+
+const PROBLEMS = [
+  {id:"p2019-1", year:"2019", no:"T1", name:"格雷码", kp:["动态规划 DP","贪心"], kpIds:["kp-dp","kp-greedy"], point:"位运算 + 递推构造；格雷码生成与还原，考查二进制与递归建模。"},
+  {id:"p2019-2", year:"2019", no:"T2", name:"括号树", kp:["动态规划 DP","树（重心/DFS）","搜索（BFS/DFS）","模拟（含大模拟）"], kpIds:["kp-dp","kp-tree","kp-search","kp-sim"], point:"树上合法括号序列计数，树形 DP 经典应用；DFS 维护前缀和。"},
+  {id:"p2019-3", year:"2019", no:"T3", name:"树上的数", kp:["贪心","构造"], kpIds:["kp-greedy","kp-construct"], point:"树上贪心 + 构造；高难度思维题，考查排列与交换的深刻理解。"},
+  {id:"p2020-1", year:"2020", no:"T1", name:"儒略日", kp:["模拟（含大模拟）","动态规划 DP","树（重心/DFS）","搜索（BFS/DFS）"], kpIds:["kp-sim","kp-dp","kp-tree","kp-search"], point:"史上著名大模拟，日期推演 + 二分答案；实现精度是最大敌人。"},
+  {id:"p2020-2", year:"2020", no:"T2", name:"动物园", kp:["位运算","模拟（含大模拟）","图论（不含树）","数据结构（栈/队列）"], kpIds:["kp-bit","kp-sim","kp-graph","kp-ds"], point:"位运算 + 集合建模；注意 2^64 溢出坑点，逐位统计。"},
+  {id:"p2020-3", year:"2020", no:"T3", name:"函数调用", kp:["图论（不含树）","数学 / 组合数学"], kpIds:["kp-graph","kp-math"], point:"拓扑排序 + 贡献传递；把调用图建成 DAG 后倒序处理乘法标记。"},
+  {id:"p2021-1", year:"2021", no:"T1", name:"廊桥分配", kp:["贪心","图论（不含树）","树（重心/DFS）","动态规划 DP"], kpIds:["kp-greedy","kp-graph","kp-tree","kp-dp"], point:"贪心 + 优先队列模拟；先求每个廊桥数量对应的最大航班数，再合并。"},
+  {id:"p2021-2", year:"2021", no:"T2", name:"括号序列", kp:["动态规划 DP","贪心","数学 / 组合数学","数据结构（栈/队列）","构造","博弈"], kpIds:["kp-dp","kp-greedy","kp-math","kp-ds","kp-construct","kp-game"], point:"高难度区间 DP 计数；状态设计复杂、细节多，T2 中少见的高难度题。"},
+  {id:"p2021-3", year:"2021", no:"T3", name:"回文", kp:["图论（不含树）","构造"], kpIds:["kp-graph","kp-construct"], point:"贪心 + 构造；双端取数构造回文，考查两指针思维。"},
+  {id:"p2022-1", year:"2022", no:"T1", name:"假期计划", kp:["动态规划 DP","贪心","数据结构（栈/队列）","字符串（含哈希）"], kpIds:["kp-dp","kp-greedy","kp-ds","kp-string"], point:"图论 + DP 综合：预处理每个点距离 ≤ k 的可达点集，再枚举中点。"},
+  {id:"p2022-2", year:"2022", no:"T2", name:"策略游戏", kp:["位运算","动态规划 DP"], kpIds:["kp-bit","kp-dp"], point:"分类讨论 + ST 表/线段树区间最值；两数组取数博弈，注意正负分情况。"},
+  {id:"p2022-3", year:"2022", no:"T3", name:"星战", kp:["图论（不含树）","字符串（含哈希）"], kpIds:["kp-graph","kp-string"], point:"随机权值哈希维护图的状态；判定每个点出度为 1 的可逆操作。"},
+  {id:"p2023-1", year:"2023", no:"T1", name:"密码锁", kp:["模拟（含大模拟）","数据结构（栈/队列）","贪心","位运算"], kpIds:["kp-sim","kp-ds","kp-greedy","kp-bit"], point:"暴力枚举 + 模拟校验；限制条件拆解后对状态空间剪枝。"},
+  {id:"p2023-2", year:"2023", no:"T2", name:"消消乐", kp:["动态规划 DP","数学 / 组合数学","树（重心/DFS）","字符串（含哈希）"], kpIds:["kp-dp","kp-math","kp-tree","kp-string"], point:"栈 + 哈希维护前缀状态；字符串哈希新热点的代表题。"},
+  {id:"p2023-3", year:"2023", no:"T3", name:"结构体", kp:["模拟（含大模拟）","字符串（含哈希）"], kpIds:["kp-sim","kp-string"], point:"大模拟：结构体定义、地址计算、递归展开；实现量大、一处写错全题出错。"},
+  {id:"p2024-1", year:"2024", no:"T1", name:"超速检测", kp:["贪心","动态规划 DP","数据结构（栈/队列）"], kpIds:["kp-greedy","kp-dp","kp-ds"], point:"物理建模 + 二分 + 贪心：先转区间，再求最少保留测速仪使每区间有覆盖。"},
+  {id:"p2024-2", year:"2024", no:"T2", name:"染色", kp:["动态规划 DP","图论（不含树）","字符串（含哈希）","博弈"], kpIds:["kp-dp","kp-graph","kp-string","kp-game"], point:"DP + 全局标记/线段树优化：O(n²) 直转移必 T，需优化到线性。"},
+  {id:"p2024-3", year:"2024", no:"T3", name:"黑客", kp:["贪心","数学 / 组合数学"], kpIds:["kp-greedy","kp-math"], point:"数论 + 贪心：公约数性质 + 集合操作；快速幂与边界判断。"},
+  {id:"p2025-1", year:"2025", no:"T1", name:"社团招新", kp:["贪心","动态规划 DP"], kpIds:["kp-greedy","kp-dp"], point:"贪心 + 排序（计数排序/快速排序）；标准解法难度系数最高 5 级，梯度良好。"},
+  {id:"p2025-2", year:"2025", no:"T2", name:"道路修复", kp:["图论（不含树）"], kpIds:["kp-graph"], point:"MST + 子集枚举：k≤10 提示枚举乡镇子集，先求原图 MST 只保留 n-1 条边。"},
+  {id:"p2025-3", year:"2025", no:"T3", name:"谐音替换", kp:["字符串（含哈希）","数据结构（栈/队列）"], kpIds:["kp-string","kp-ds"], point:"公共前缀+替换段+公共后缀 → Trie 上二维数点 + 树状数组 + 扫描线；暴力仅部分分。"},
+  {id:"p2025-4", year:"2025", no:"T4", name:"员工招聘", kp:["数学 / 组合数学","搜索（BFS/DFS）"], kpIds:["kp-math","kp-search"], point:"容斥原理 + 组合计数综合压轴；乘法原理、排列组合、等价类思维。"}
+];
+
+const QUESTION_BANK = [
+{id:"CJ-1996",no:"1996",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-2058",no:"2058",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-7912",no:"7912",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-6382",no:"6382",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1055",no:"1055",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1022",no:"1022",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1540",no:"1540",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1886",no:"1886",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1597",no:"1597",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1067",no:"1067",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-3880",no:"3880",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-5661",no:"5661",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-3662",no:"3662",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1765",no:"1765",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-B3958",no:"B3958",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-6051",no:"6051",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-2952",no:"2952",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-5015",no:"5015",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1104",no:"1104",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-7911",no:"7911",group:"CSP-J",cat:"队列",diff:3},
+{id:"CJ-1981",no:"1981",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-4387",no:"4387",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-5660",no:"5660",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-B3927",no:"B3927",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-3056",no:"3056",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-1901",no:"1901",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-5832",no:"5832",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-1603",no:"1603",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-1165",no:"1165",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-2866",no:"2866",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-6263",no:"6263",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-1808",no:"1808",group:"CSP-J",cat:"栈",diff:3},
+{id:"CJ-6568",no:"6568",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-3662",no:"3662",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-10442",no:"10442",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-1572",no:"1572",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-6625",no:"6625",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-9459",no:"9459",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-2708",no:"2708",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-1147",no:"1147",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-B2122",no:"B2122",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-2957",no:"2957",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-2367",no:"2367",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-5542",no:"5542",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-B2126",no:"B2126",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-B3843",no:"B3843",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-3397",no:"3397",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-B2117",no:"B2117",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-9094",no:"9094",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-11227",no:"11227",group:"CSP-J",cat:"差分",diff:3},
+{id:"CJ-1571",no:"1571",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2920",no:"2920",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2362",no:"2362",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1057",no:"1057",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-5888",no:"5888",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1678",no:"1678",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2985",no:"2985",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1203",no:"1203",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1970",no:"1970",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2359",no:"2359",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1918",no:"1918",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1873",no:"1873",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2008",no:"2008",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-3399",no:"3399",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1799",no:"1799",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-8814",no:"8814",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1843",no:"1843",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-8707",no:"8707",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1103",no:"1103",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1650",no:"1650",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1824",no:"1824",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2678",no:"2678",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1002",no:"1002",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1388",no:"1388",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1651",no:"1651",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-2440",no:"2440",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1130",no:"1130",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-1140",no:"1140",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-11230",no:"11230",group:"CSP-J",cat:"二分",diff:3},
+{id:"CJ-7226",no:"7226",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1146",no:"1146",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-9750",no:"9750",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1216",no:"1216",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1481",no:"1481",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7257",no:"7257",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7199",no:"7199",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1619",no:"1619",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1115",no:"1115",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-2028",no:"2028",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7772",no:"7772",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7909",no:"7909",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-8050",no:"8050",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1359",no:"1359",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1233",no:"1233",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1035",no:"1035",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1293",no:"1293",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-11229",no:"11229",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-8395",no:"8395",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7074",no:"7074",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1150",no:"1150",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-6188",no:"6188",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-2837",no:"2837",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-8816",no:"8816",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1425",no:"1425",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-8177",no:"8177",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1968",no:"1968",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1977",no:"1977",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1851",no:"1851",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-9748",no:"9748",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1796",no:"1796",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1876",no:"1876",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-2800",no:"2800",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1887",no:"1887",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-3009",no:"3009",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-2669",no:"2669",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-7158",no:"7158",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-2705",no:"2705",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-1569",no:"1569",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-6421",no:"6421",group:"CSP-J",cat:"数学思维",diff:3},
+{id:"CJ-9585",no:"9585",group:"CSP-J",cat:"背包DP",diff:3},
+{id:"CJ-1507",no:"1507",group:"CSP-J",cat:"背包DP",diff:3},
+{id:"CJ-2946",no:"2946",group:"CSP-J",cat:"背包DP",diff:3},
+{id:"CJ-5662",no:"5662",group:"CSP-J",cat:"背包DP",diff:3},
+{id:"CJ-1075",no:"1075",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1217",no:"1217",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-2663",no:"2663",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-2918",no:"2918",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-5365",no:"5365",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-8443",no:"8443",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-2118",no:"2118",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1855",no:"1855",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-2904",no:"2904",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-5322",no:"5322",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1029",no:"1029",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1910",no:"1910",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1853",no:"1853",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1156",no:"1156",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-4057",no:"4057",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1510",no:"1510",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1509",no:"1509",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1776",no:"1776",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-3383",no:"3383",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1048",no:"1048",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-1504",no:"1504",group:"CSP-J",cat:"筛选法 分解质因数 GCD/LCM",diff:3},
+{id:"CJ-6352",no:"6352",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1003",no:"1003",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-8874",no:"8874",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1049",no:"1049",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1077",no:"1077",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-8813",no:"8813",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-7072",no:"7072",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2007",no:"2007",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1060",no:"1060",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2340",no:"2340",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-7071",no:"7071",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1008",no:"1008",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2239",no:"2239",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1164",no:"1164",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-6771",no:"6771",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1909",no:"1909",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1097",no:"1097",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-7186",no:"7186",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1734",no:"1734",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2725",no:"2725",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1421",no:"1421",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1109",no:"1109",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1969",no:"1969",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2347",no:"2347",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1833",no:"1833",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1420",no:"1420",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1563",no:"1563",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-9287",no:"9287",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1926",no:"1926",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1307",no:"1307",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2010",no:"2010",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1065",no:"1065",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2430",no:"2430",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1179",no:"1179",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-5412",no:"5412",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-3585",no:"3585",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1877",no:"1877",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-6386",no:"6386",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-3955",no:"3955",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-9553",no:"9553",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2639",no:"2639",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-8318",no:"8318",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-5016",no:"5016",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-8831",no:"8831",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2925",no:"2925",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1047",no:"1047",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2681",no:"2681",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-9974",no:"9974",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2871",no:"2871",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1046",no:"1046",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2692",no:"2692",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-8685",no:"8685",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1616",no:"1616",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1085",no:"1085",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-3392",no:"3392",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2348",no:"2348",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1679",no:"1679",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1089",no:"1089",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-3817",no:"3817",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1076",no:"1076",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1832",no:"1832",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1152",no:"1152",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1190",no:"1190",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-7910",no:"7910",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-2722",no:"2722",group:"CSP-J",cat:"模拟",diff:3},
+{id:"CJ-1548",no:"1548",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-9749",no:"9749",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1775",no:"1775",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1063",no:"1063",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-2356",no:"2356",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1059",no:"1059",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-2858",no:"2858",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1622",no:"1622",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1614",no:"1614",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1093",no:"1093",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-2426",no:"2426",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-3146",no:"3146",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-6437",no:"6437",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-11228",no:"11228",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-8675",no:"8675",group:"CSP-J",cat:"区间DP",diff:3},
+{id:"CJ-1596",no:"1596",group:"CSP-J",cat:"BFS",diff:3},
+{id:"CJ-1443",no:"1443",group:"CSP-J",cat:"BFS",diff:3},
+{id:"CJ-3205",no:"3205",group:"CSP-J",cat:"BFS",diff:3},
+{id:"CJ-1746",no:"1746",group:"CSP-J",cat:"BFS",diff:3},
+{id:"CJ-1332",no:"1332",group:"CSP-J",cat:"BFS",diff:3},
+{id:"CJ-1747",no:"1747",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-8605",no:"8605",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-5318",no:"5318",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-5663",no:"5663",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-3395",no:"3395",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-8604",no:"8604",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-1330",no:"1330",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-9751",no:"9751",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-1135",no:"1135",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-1294",no:"1294",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-2895",no:"2895",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-8674",no:"8674",group:"CSP-J",cat:"建图搜索",diff:3},
+{id:"CJ-1605",no:"1605",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1123",no:"1123",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2919",no:"2919",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1827",no:"1827",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1229",no:"1229",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-8815",no:"8815",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1219",no:"1219",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-B3642",no:"B3642",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2171",no:"2171",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2441",no:"2441",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-6207",no:"6207",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1087",no:"1087",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2052",no:"2052",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-5018",no:"5018",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-8838",no:"8838",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-1030",no:"1030",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-9304",no:"9304",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-4913",no:"4913",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2420",no:"2420",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-3915",no:"3915",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-2367",no:"2367",group:"CSP-J",cat:"前缀和",diff:3},
+{id:"CJ-5318",no:"5318",group:"CSP-J",cat:"DFS",diff:3},
+{id:"CJ-4913",no:"4913",group:"CSP-J",cat:"树论",diff:3},
+{id:"CJ-3915",no:"3915",group:"CSP-J",cat:"树论",diff:3},
+{id:"CJ-5018",no:"5018",group:"CSP-J",cat:"树论",diff:3},
+{id:"CJ-8815",no:"8815",group:"CSP-J",cat:"树论",diff:3},
+{id:"CJ-1130",no:"1130",group:"CSP-J",cat:"DP",diff:3},
+{id:"CJ-1057",no:"1057",group:"CSP-J",cat:"DP",diff:3},
+{id:"CJ-3399",no:"3399",group:"CSP-J",cat:"DP",diff:3},
+{id:"CJ-8816",no:"8816",group:"CSP-J",cat:"DP",diff:3},
+{id:"CJ-1164",no:"1164",group:"CSP-J",cat:"背包",diff:3},
+{id:"CJ-1734",no:"1734",group:"CSP-J",cat:"背包",diff:3},
+{id:"CJ-1679",no:"1679",group:"CSP-J",cat:"背包",diff:3},
+{id:"CJ-5662",no:"5662",group:"CSP-J",cat:"背包",diff:3},
+{id:"CJ-1765",no:"1765",group:"CSP-J",cat:"字符串",diff:3},
+{id:"CJ-5015",no:"5015",group:"CSP-J",cat:"字符串",diff:3},
+{id:"CJ-1808",no:"1808",group:"CSP-J",cat:"字符串",diff:3},
+{id:"CJ-7911",no:"7911",group:"CSP-J",cat:"字符串",diff:3},
+{id:"CJ-3383",no:"3383",group:"CSP-J",cat:"数学知识",diff:3},
+{id:"CJ-4057",no:"4057",group:"CSP-J",cat:"数学知识",diff:3},
+{id:"CJ-2118",no:"2118",group:"CSP-J",cat:"数学知识",diff:3},
+{id:"CS-1807",no:"1807",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1038",no:"1038",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3243",no:"3243",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-5200",no:"5200",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-10235",no:"10235",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-6186",no:"6186",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3960",no:"3960",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-8893",no:"8893",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-7113",no:"7113",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3374",no:"3374",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1168",no:"1168",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1966",no:"1966",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3586",no:"3586",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-2712",no:"2712",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1983",no:"1983",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3368",no:"3368",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3608",no:"3608",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1972",no:"1972",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3074",no:"3074",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1685",no:"1685",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1908",no:"1908",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-2161",no:"2161",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-6145",no:"6145",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-5603",no:"5603",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-3605",no:"3605",group:"CSP-S",cat:"拓扑排序-6",diff:6},
+{id:"CS-1137",no:"1137",group:"CSP-S",cat:"字典树-6",diff:6},
+{id:"CS-3879",no:"3879",group:"CSP-S",cat:"字典树-6",diff:6},
+{id:"CS-2580",no:"2580",group:"CSP-S",cat:"字典树-6",diff:6},
+{id:"CS-10166",no:"10166",group:"CSP-S",cat:"字典树-6",diff:6},
+{id:"CS-8306",no:"8306",group:"CSP-S",cat:"字典树-6",diff:6},
+{id:"CS-7771",no:"7771",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1276",no:"1276",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1531",no:"1531",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1198",no:"1198",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1607",no:"1607",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1341",no:"1341",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-2003",no:"2003",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-3353",no:"3353",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-2471",no:"2471",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1712",no:"1712",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-2731",no:"2731",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1886",no:"1886",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-2846",no:"2846",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-1937",no:"1937",group:"CSP-S",cat:"欧拉回路-6",diff:6},
+{id:"CS-8654",no:"8654",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-6121",no:"6121",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-1196",no:"1196",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-4086",no:"4086",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3130",no:"3130",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-2146",no:"2146",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-2078",no:"2078",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-8710",no:"8710",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-4185",no:"4185",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-4393",no:"4393",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3372",no:"3372",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-2590",no:"2590",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-8686",no:"8686",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-1892",no:"1892",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3373",no:"3373",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3178",no:"3178",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3367",no:"3367",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-1621",no:"1621",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-4588",no:"4588",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3384",no:"3384",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-1536",no:"1536",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-2658",no:"2658",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-8473",no:"8473",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-3833",no:"3833",group:"CSP-S",cat:"并查集-6",diff:6},
+{id:"CS-6691",no:"6691",group:"CSP-S",cat:"多倍并查集",diff:5},
+{id:"CS-2024",no:"2024",group:"CSP-S",cat:"多倍并查集",diff:5},
+{id:"CS-8856",no:"8856",group:"CSP-S",cat:"多倍并查集",diff:5},
+{id:"CS-4344",no:"4344",group:"CSP-S",cat:"多倍并查集",diff:5},
+{id:"CS-2661",no:"2661",group:"CSP-S",cat:"平衡树-8",diff:8},
+{id:"CS-1546",no:"1546",group:"CSP-S",cat:"最小生成树-6",diff:6},
+{id:"CS-3366",no:"3366",group:"CSP-S",cat:"最小生成树-6",diff:6},
+{id:"CS-2212",no:"2212",group:"CSP-S",cat:"最小生成树-6",diff:6},
+{id:"CS-2323",no:"2323",group:"CSP-S",cat:"最小生成树-6",diff:6},
+{id:"CS-2872",no:"2872",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-1265",no:"1265",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-2573",no:"2573",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-2916",no:"2916",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-9709",no:"9709",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-4180",no:"4180",group:"CSP-S",cat:"DP",diff:5},
+{id:"CS-2504",no:"2504",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-1340",no:"1340",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-8625",no:"8625",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-3047",no:"3047",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-8089",no:"8089",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-8935",no:"8935",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-2330",no:"2330",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-3073",no:"3073",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-4951",no:"4951",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-8744",no:"8744",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-4084",no:"4084",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-3177",no:"3177",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-9111",no:"9111",group:"CSP-S",cat:"次小生成树",diff:5},
+{id:"CS-1194",no:"1194",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-1352",no:"1352",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-7846",no:"7846",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-4322",no:"4322",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-4582",no:"4582",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-1195",no:"1195",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-B4016",no:"B4016",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2986",no:"2986",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-4408",no:"4408",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-5666",no:"5666",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2121",no:"2121",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2016",no:"2016",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2015",no:"2015",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-8677",no:"8677",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-3761",no:"3761",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-1547",no:"1547",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2899",no:"2899",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2014",no:"2014",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-3574",no:"3574",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-3237",no:"3237",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-1669",no:"1669",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-3304",no:"3304",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-2491",no:"2491",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-3565",no:"3565",group:"CSP-S",cat:"最优比率生成树",diff:5},
+{id:"CS-1407",no:"1407",group:"CSP-S",cat:"Tarjan-7",diff:7},
+{id:"CS-1131",no:"1131",group:"CSP-S",cat:"Tarjan-7",diff:7},
+{id:"CS-1270",no:"1270",group:"CSP-S",cat:"Tarjan-7",diff:7},
+{id:"CS-3554",no:"3554",group:"CSP-S",cat:"Tarjan-7",diff:7},
+{id:"8436",no:"8436",group:"CSP-S",cat:"边双",diff:5},
+{id:"CS-1653",no:"1653",group:"CSP-S",cat:"边双",diff:5},
+{id:"CS-4362",no:"4362",group:"CSP-S",cat:"边双",diff:5},
+{id:"CS-1272",no:"1272",group:"CSP-S",cat:"边双",diff:5},
+{id:"CS-3629",no:"3629",group:"CSP-S",cat:"边双",diff:5},
+{id:"7687",no:"7687",group:"CSP-S",cat:"割边",diff:5},
+{id:"CS-2341",no:"2341",group:"CSP-S",cat:"割边",diff:5},
+{id:"CS-3174",no:"3174",group:"CSP-S",cat:"割边",diff:5},
+{id:"CS-3354",no:"3354",group:"CSP-S",cat:"割边",diff:5},
+{id:"3387",no:"3387",group:"CSP-S",cat:"缩点",diff:5},
+{id:"CS-5676",no:"5676",group:"CSP-S",cat:"缩点",diff:5},
+{id:"CS-1064",no:"1064",group:"CSP-S",cat:"缩点",diff:5},
+{id:"CS-4516",no:"4516",group:"CSP-S",cat:"缩点",diff:5},
+{id:"3388",no:"3388",group:"CSP-S",cat:"割点",diff:5},
+{id:"CS-3469",no:"3469",group:"CSP-S",cat:"割点",diff:5},
+{id:"CS-1273",no:"1273",group:"CSP-S",cat:"割点",diff:5},
+{id:"8435",no:"8435",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-2812",no:"2812",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-7859",no:"7859",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-8687",no:"8687",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-3052",no:"3052",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-8756",no:"8756",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-1073",no:"1073",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-8733",no:"8733",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-3888",no:"3888",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-291",no:"291",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-2002",no:"2002",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-1433",no:"1433",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-2831",no:"2831",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-327",no:"327",group:"CSP-S",cat:"点双",diff:5},
+{id:"CS-1600",no:"1600",group:"CSP-S",cat:"LCA-6",diff:6},
+{id:"CS-2704",no:"2704",group:"CSP-S",cat:"LCA-6",diff:6},
+{id:"CS-1064",no:"1064",group:"CSP-S",cat:"LCA-6",diff:6},
+{id:"CS-10113",no:"10113",group:"CSP-S",cat:"在线",diff:5},
+{id:"CS-3833",no:"3833",group:"CSP-S",cat:"在线",diff:5},
+{id:"CS-2680",no:"2680",group:"CSP-S",cat:"在线",diff:5},
+{id:"CS-1879",no:"1879",group:"CSP-S",cat:"在线",diff:5},
+{id:"CS-4427",no:"4427",group:"CSP-S",cat:"树前缀和",diff:5},
+{id:"CS-9235",no:"9235",group:"CSP-S",cat:"树前缀和",diff:5},
+{id:"CS-2513",no:"2513",group:"CSP-S",cat:"树前缀和",diff:5},
+{id:"CS-2511",no:"2511",group:"CSP-S",cat:"树前缀和",diff:5},
+{id:"CS-2569",no:"2569",group:"CSP-S",cat:"树前缀和",diff:5},
+{id:"CS-3258",no:"3258",group:"CSP-S",cat:"单调队列 优化DP-8",diff:8},
+{id:"CS-1776",no:"1776",group:"CSP-S",cat:"单调队列 优化DP-8",diff:8},
+{id:"CS-2254",no:"2254",group:"CSP-S",cat:"单调队列 优化DP-8",diff:8},
+{id:"CS-3128",no:"3128",group:"CSP-S",cat:"树上差分",diff:5},
+{id:"CS-3572",no:"3572",group:"CSP-S",cat:"树上差分",diff:5},
+{id:"CS-2935",no:"2935",group:"CSP-S",cat:"最短路-6 次短路-7",diff:7},
+{id:"CS-2176",no:"2176",group:"CSP-S",cat:"最短路-6 次短路-7",diff:7},
+{id:"CS-1186",no:"1186",group:"CSP-S",cat:"最短路-6 次短路-7",diff:7},
+{id:"CS-2371",no:"2371",group:"CSP-S",cat:"最短路-6 次短路-7",diff:7},
+{id:"CS-3594",no:"3594",group:"CSP-S",cat:"最短路-6 次短路-7",diff:7},
+{id:"CS-2984",no:"2984",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-2047",no:"2047",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-2446",no:"2446",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-5017",no:"5017",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-8632",no:"8632",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1339",no:"1339",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1078",no:"1078",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-2966",no:"2966",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-4042",no:"4042",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-2497",no:"2497",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1721",no:"1721",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1821",no:"1821",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1119",no:"1119",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-5100",no:"5100",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-4056",no:"4056",group:"CSP-S",cat:"斜率优化DP-8",diff:8},
+{id:"CS-1529",no:"1529",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-1522",no:"1522",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-3831",no:"3831",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-6302",no:"6302",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2888",no:"2888",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-9751",no:"9751",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-4822",no:"4822",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2900",no:"2900",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2951",no:"2951",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2914",no:"2914",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-4568",no:"4568",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2120",no:"2120",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-6770",no:"6770",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-6464",no:"6464",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2939",no:"2939",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-3195",no:"3195",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-3003",no:"3003",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-3371",no:"3371",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-5785",no:"5785",group:"CSP-S",cat:"分层图",diff:5},
+{id:"CS-2419",no:"2419",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-2865",no:"2865",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-4832",no:"4832",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-7097",no:"7097",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-1673",no:"1673",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-1491",no:"1491",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-4823",no:"4823",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-6893",no:"6893",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-1629",no:"1629",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-4138",no:"4138",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-4516",no:"4516",group:"CSP-S",cat:"次短路",diff:5},
+{id:"CS-6145",no:"6145",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-5960",no:"5960",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-3275",no:"3275",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-7624",no:"7624",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-2224",no:"2224",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-4026",no:"4026",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-1250",no:"1250",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-1993",no:"1993",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-2474",no:"2474",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-2732",no:"2732",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-4037",no:"4037",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-4878",no:"4878",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-3084",no:"3084",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-3891",no:"3891",group:"CSP-S",cat:"差分约束",diff:5},
+{id:"CS-4926",no:"4926",group:"CSP-S",cat:"线性DP",diff:5},
+{id:"CS-1279",no:"1279",group:"CSP-S",cat:"线性DP",diff:5},
+{id:"CS-1070",no:"1070",group:"CSP-S",cat:"线性DP",diff:5},
+{id:"CS-10378",no:"10378",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-1525",no:"1525",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-10726",no:"10726",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-1448",no:"1448",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-1330",no:"1330",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-8803",no:"8803",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-1758",no:"1758",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-8810",no:"8810",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-4728",no:"4728",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-8699",no:"8699",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-8703",no:"8703",group:"CSP-S",cat:"二分图判定",diff:5},
+{id:"CS-1880",no:"1880",group:"CSP-S",cat:"数学",diff:5},
+{id:"CS-4767",no:"4767",group:"CSP-S",cat:"数学",diff:5},
+{id:"CS-8864",no:"8864",group:"CSP-S",cat:"数学",diff:5},
+{id:"CS-7107",no:"7107",group:"CSP-S",cat:"鸽巢原理-6",diff:6},
+{id:"CS-8807",no:"8807",group:"CSP-S",cat:"鸽巢原理-6",diff:6},
+{id:"CS-2851",no:"2851",group:"CSP-S",cat:"鸽巢原理-6",diff:6},
+{id:"CS-4999",no:"4999",group:"CSP-S",cat:"鸽巢原理-6",diff:6},
+{id:"CS-6218",no:"6218",group:"CSP-S",cat:"鸽巢原理-6",diff:6},
+{id:"CS-1292",no:"1292",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-1082",no:"1082",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-6299",no:"6299",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-B3883",no:"B3883",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-2657",no:"2657",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-1516",no:"1516",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-8764",no:"8764",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-4124",no:"4124",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-5656",no:"5656",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-8801",no:"8801",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-4127",no:"4127",group:"CSP-S",cat:"EXGCD-7",diff:7},
+{id:"CS-2833",no:"2833",group:"CSP-S",cat:"区间DP",diff:5},
+{id:"CS-1220",no:"1220",group:"CSP-S",cat:"区间DP",diff:5},
+{id:"CS-3197",no:"3197",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-6298",no:"6298",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-1450",no:"1450",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-2466",no:"2466",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-8557",no:"8557",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-6692",no:"6692",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-5664",no:"5664",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-3147",no:"3147",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-6162",no:"6162",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-4290",no:"4290",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-6076",no:"6076",group:"CSP-S",cat:"容斥原理-7",diff:7},
+{id:"CS-5505",no:"5505",group:"CSP-S",cat:"杂项",diff:5},
+{id:"CS-1722",no:"1722",group:"CSP-S",cat:"卡特兰数-7",diff:7},
+{id:"CS-1754",no:"1754",group:"CSP-S",cat:"卡特兰数-7",diff:7},
+{id:"CS-7118",no:"7118",group:"CSP-S",cat:"卡特兰数-7",diff:7},
+{id:"CS-3200",no:"3200",group:"CSP-S",cat:"卡特兰数-7",diff:7},
+{id:"CS-1044",no:"1044",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-1375",no:"1375",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-3378",no:"3378",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-1090",no:"1090",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-8769",no:"8769",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-2278",no:"2278",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-1976",no:"1976",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-7072",no:"7072",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-8755",no:"8755",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-1631",no:"1631",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-1392",no:"1392",group:"CSP-S",cat:"堆排序-6",diff:6},
+{id:"CS-3811",no:"3811",group:"CSP-S",cat:"逆元-7",diff:7},
+{id:"CS-8178",no:"8178",group:"CSP-S",cat:"逆元-7",diff:7},
+{id:"CS-1334",no:"1334",group:"CSP-S",cat:"逆元-7",diff:7},
+{id:"CS-2949",no:"2949",group:"CSP-S",cat:"逆元-7",diff:7},
+{id:"CS-3045",no:"3045",group:"CSP-S",cat:"逆元-7",diff:7},
+{id:"CS-B3717",no:"B3717",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-1470",no:"1470",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-4391",no:"4391",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-8112",no:"8112",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-4071",no:"4071",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-3375",no:"3375",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-3435",no:"3435",group:"CSP-S",cat:"KMP-5",diff:5},
+{id:"CS-1464",no:"1464",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-5635",no:"5635",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-3609",no:"3609",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-3257",no:"3257",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-3183",no:"3183",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-2690",no:"2690",group:"CSP-S",cat:"记忆化搜索-6",diff:6},
+{id:"CS-7318",no:"7318",group:"CSP-S",cat:"矩阵-6",diff:6},
+{id:"CS-3390",no:"3390",group:"CSP-S",cat:"矩阵-6",diff:6},
+{id:"CS-1397",no:"1397",group:"CSP-S",cat:"矩阵-6",diff:6},
+{id:"CS-1544",no:"1544",group:"CSP-S",cat:"矩阵-6",diff:6},
+{id:"CS-5550",no:"5550",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-1962",no:"1962",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-6569",no:"6569",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-2957",no:"2957",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-8630",no:"8630",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-7469",no:"7469",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-8643",no:"8643",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-3823",no:"3823",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-1338",no:"1338",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-2044",no:"2044",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-4159",no:"4159",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-3370",no:"3370",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-6739",no:"6739",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-3678",no:"3678",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-3318",no:"3318",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-1939",no:"1939",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-6435",no:"6435",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-4305",no:"4305",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-4503",no:"4503",group:"CSP-S",cat:"哈希-6",diff:6},
+{id:"CS-2251",no:"2251",group:"CSP-S",cat:"ST表-6",diff:6},
+{id:"CS-8818",no:"8818",group:"CSP-S",cat:"ST表-6",diff:6},
+{id:"CS-6648",no:"6648",group:"CSP-S",cat:"ST表-6",diff:6},
+{id:"CS-5345",no:"5345",group:"CSP-S",cat:"孙子定理-7",diff:7},
+{id:"CS-2880",no:"2880",group:"CSP-S",cat:"孙子定理-7",diff:7},
+{id:"CS-7809",no:"7809",group:"CSP-S",cat:"孙子定理-7",diff:7},
+{id:"CS-7333",no:"7333",group:"CSP-S",cat:"高斯消元-7",diff:7},
+{id:"CS-1226",no:"1226",group:"CSP-S",cat:"快速幂",diff:5},
+{id:"CS-1965",no:"1965",group:"CSP-S",cat:"快速幂",diff:5},
+{id:"CS-1816",no:"1816",group:"CSP-S",cat:"快速幂",diff:5},
+{id:"CS-1313",no:"1313",group:"CSP-S",cat:"快速幂",diff:5},
+{id:"CS-2866",no:"2866",group:"CSP-S",cat:"快速幂",diff:5},
+{id:"CS-1908",no:"1908",group:"CSP-S",cat:"归并排序-5",diff:5},
+{id:"CS-5149",no:"5149",group:"CSP-S",cat:"归并排序-5",diff:5},
+{id:"CS-1309",no:"1309",group:"CSP-S",cat:"归并排序-5",diff:5},
+{id:"CS-1923",no:"1923",group:"CSP-S",cat:"快速排序-5",diff:5},
+{id:"CS-B3619",no:"B3619",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-B3753",no:"B3753",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-4144",no:"4144",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1023",no:"1023",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1069",no:"1069",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1041",no:"1041",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-B3620",no:"B3620",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-7076",no:"7076",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-4932",no:"4932",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1025",no:"1025",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1072",no:"1072",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1053",no:"1053",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1017",no:"1017",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-7627",no:"7627",group:"CSP-S",cat:"进制转换 位运算",diff:5},
+{id:"CS-1056",no:"1056",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1311",no:"1311",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1054",no:"1054",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1062",no:"1062",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1219",no:"1219",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1199",no:"1199",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1314",no:"1314",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1074",no:"1074",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-1206",no:"1206",group:"CSP-S",cat:"八皇后位运算",diff:5},
+{id:"CS-8050",no:"8050",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2119",no:"2119",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1092",no:"1092",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4122",no:"4122",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1019",no:"1019",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2296",no:"2296",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1315",no:"1315",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1496",no:"1496",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2697",no:"2697",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3952",no:"3952",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2668",no:"2668",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-8873",no:"8873",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3956",no:"3956",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1114",no:"1114",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1016",no:"1016",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1039",no:"1039",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3173",no:"3173",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2671",no:"2671",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-8660",no:"8660",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1083",no:"1083",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2629",no:"2629",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2843",no:"2843",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1638",no:"1638",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-8590",no:"8590",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2568",no:"2568",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9975",no:"9975",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4998",no:"4998",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4573",no:"4573",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1134",no:"1134",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1419",no:"1419",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3610",no:"3610",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1154",no:"1154",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1542",no:"1542",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2845",no:"2845",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1592",no:"1592",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4536",no:"4536",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2897",no:"2897",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1609",no:"1609",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4343",no:"4343",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3668",no:"3668",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-6476",no:"6476",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4447",no:"4447",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1709",no:"1709",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-6462",no:"6462",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9588",no:"9588",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2636",no:"2636",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10987",no:"10987",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9485",no:"9485",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1268",no:"1268",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10905",no:"10905",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1126",no:"1126",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1269",no:"1269",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10904",no:"10904",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1363",no:"1363",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1267",no:"1267",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10903",no:"10903",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3496",no:"3496",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-8980",no:"8980",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10386",no:"10386",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1984",no:"1984",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3419",no:"3419",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10417",no:"10417",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-4446",no:"4446",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2564",no:"2564",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10443",no:"10443",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-7355",no:"7355",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10234",no:"10234",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10090",no:"10090",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-10252",no:"10252",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3088",no:"3088",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9518",no:"9518",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-3522",no:"3522",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9519",no:"9519",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-6155",no:"6155",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9460",no:"9460",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2815",no:"2815",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9688",no:"9688",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-1124",no:"1124",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9653",no:"9653",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9533",no:"9533",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9572",no:"9572",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9199",no:"9199",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9228",no:"9228",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9913",no:"9913",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-9914",no:"9914",group:"CSP-S",cat:"离散化",diff:5},
+{id:"CS-2107",no:"2107",group:"CSP-S",cat:"堆",diff:5},
+{id:"CS-2505",no:"2505",group:"CSP-S",cat:"堆",diff:5},
+{id:"CS-8767",no:"8767",group:"CSP-S",cat:"拓扑排序",diff:5},
+{id:"CS-2597",no:"2597",group:"CSP-S",cat:"拓扑排序",diff:5},
+{id:"CS-2827",no:"2827",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"CS-3436",no:"3436",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"CS-2707",no:"2707",group:"CSP-S",cat:"拓扑排序",diff:5},
+{id:"CS-3588",no:"3588",group:"CSP-S",cat:"拓扑排序",diff:5},
+{id:"CS-4850",no:"4850",group:"CSP-S",cat:"记忆化搜索",diff:5},
+{id:"CS-3443",no:"3443",group:"CSP-S",cat:"记忆化搜索",diff:5},
+{id:"CS-2217",no:"2217",group:"CSP-S",cat:"记忆化搜索",diff:5},
+{id:"CS-7974",no:"7974",group:"CSP-S",cat:"ST表",diff:5},
+{id:"CS-9534",no:"9534",group:"CSP-S",cat:"LCA/拓扑",diff:5},
+{id:"CS-4376",no:"4376",group:"CSP-S",cat:"拓扑",diff:5},
+{id:"CS-3520",no:"3520",group:"CSP-S",cat:"欧拉回路",diff:5},
+{id:"CS-1783",no:"1783",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-2941",no:"2941",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-3101",no:"3101",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-3207",no:"3207",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-3820",no:"3820",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-4185",no:"4185",group:"CSP-S",cat:"并查集",diff:5},
+{id:"CS-9638",no:"9638",group:"CSP-S",cat:"生成树",diff:5},
+{id:"CS-1967",no:"1967",group:"CSP-S",cat:"生成树/LCA",diff:5},
+{id:"CS-2502",no:"2502",group:"CSP-S",cat:"生成树",diff:5},
+{id:"CS-9352",no:"9352",group:"CSP-S",cat:"并查集/LCA",diff:5},
+{id:"CS-6185",no:"6185",group:"CSP-S",cat:"并查集/二分图",diff:5},
+{id:"CS-2403",no:"2403",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"CS-4742",no:"4742",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"CS-9220",no:"9220",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"CS-1155",no:"1155",group:"CSP-S",cat:"Tarjan",diff:5},
+{id:"NOI-10505",no:"10505",group:"NOI",cat:"分数规划",diff:8},
+{id:"NOI-4377",no:"4377",group:"NOI",cat:"分数规划",diff:8},
+{id:"NOI-3199",no:"3199",group:"NOI",cat:"分数规划",diff:8},
+{id:"NOI-4322",no:"4322",group:"NOI",cat:"CDQ分治",diff:8},
+{id:"NOI-2868",no:"2868",group:"NOI",cat:"CDQ分治",diff:8}
+];
+
+const ANSWER_HINTS = {"二分": "二分答案三板斧：明确 check(mid) 的单调性 → 二分边界与答案记录。整数二分防死循环（l=mid+1 / r=mid-1），实数二分控制 eps。", "数学思维": "从数据范围与特殊性质切入：枚举小范围找规律、分类讨论、构造反例验证；将问题归约到方程/取模/组合模型。", "数学": "数论/组合建模：先写暴力验证小数据，再抽象为数学表达式；注意取模、溢出与边界。", "模拟": "按题意拆步骤建模：用清晰数据结构表达状态，函数化封装子过程；先主干后细节，防一处错全盘错。", "数学知识": "综合数学知识（数论/组合/几何）：掌握快速幂、GCD、素数筛、组合数取模等基础工具箱。", "BFS": "队列 + visited 逐层扩展；可统计最短步数；多源 BFS、双向 BFS、0-1 BFS 针对特殊图优化。", "DFS": "递归框架 + 剪枝；可行性/最优性剪枝；注意递归深度，必要时转迭代或手写栈。", "DP": "确定 dp 状态含义 → 写出转移 → 初始化边界 → 复杂度优化（滚动数组/数据结构）。", "线性DP": "dp[i] 线性递推；LIS/LCS/最大子段和模型；注意初始化与转移顺序。", "背包DP": "01 背包倒序枚举容量；完全背包正序；多重背包二进制拆分或单调队列优化；先识别物品与容量维度。", "背包": "识别背包模型（容量/价值/件数限制）：01/完全/多重/分组，转移与空间优化。", "区间DP": "枚举区间长度 → 枚举分割点：dp[l][r]=min/max(dp[l][k]+dp[k+1][r])+cost；环状破链 2n。", "前缀和": "O(1) 区间和：一维/二维前缀和；配合差分做区间加。", "差分": "差分数组区间加 O(1)、前缀和还原；树上差分处理路径边/点权加减。", "队列": "queue/deque 模拟 FIFO；单调队列维护窗口最值（均摊 O(1)）。", "栈": "单调栈求左右最近更大/更小；括号匹配模拟；出栈入栈时机是核心。", "建图搜索": "把问题状态抽象为图（状态为点、操作为边），邻接表建图后 BFS/DFS/最短路求解。", "树论": "链式前向星存图 + DFS；子树信息自底向上合并；倍增/树剖应对树上路径问题。", "拓扑": "DAG 上拓扑排序：入度为零入队删边；常与 DP 结合做递推，可判环。", "拓扑排序": "BFS/DFS 求拓扑序；入度统计 + 队列；DAG 上最长路/方案数可用拓扑序 DP。", "并查集": "路径压缩 + 按秩合并；带权（距离）与扩展域并查集处理相对关系；离线倒序处理删边。", "最小生成树": "Kruskal（排序+并查集）/ Prim（优先队列）；次小生成树在 MST 上换边。", "最短路": "Dijkstra 堆优化（非负权）；SPFA 判负环；Floyd 多源最短路；注意重边与精度。", "次短路": "Dijkstra 维护最短路 + 次短路双状态；严格次短与可相等次短注意区分。", "次小生成树": "先求 MST，枚举非树边替换路径上最大边；倍增维护路径最大值。", "生成树": "建树/生成树计数与维护：Kruskal 思想、并查集辅助、最小瓶颈路径。", "Tarjan": "dfn/low + 时间戳：求 SCC（缩点成 DAG）、割点、割边；low[v]>=dfn[u] 判割点。", "Tarjan-7": "dfn/low + 时间戳：求 SCC（缩点成 DAG）、割点、割边；注意重边与根节点特判。", "LCA": "倍增/树剖/离线 Tarjan 求 LCA；树上距离 = dep[u]+dep[v]-2*dep[lca]。", "LCA/拓扑": "树上 LCA 与拓扑序结合：路径拆分、贡献统计；先建图再分层递推。", "二分图判定": "染色法 DFS/BFS 判二分图；匈牙利算法求最大匹配；最大独立集 = 顶点数 - 最大匹配。", "差分约束": "不等式 x_j - x_i <= c 建边 i->j 权 c；跑最短路（负环无解）或最长路（取最大解）。", "EXGCD-7": "扩展欧几里得求 ax+by=gcd 一组解；进而解模线性方程、求逆元。", "容斥原理": "并集 = Σ单集合 - Σ两两交 + ...；奇加偶减；常配合组合计数与 DP。", "卡特兰数-7": "h(n)=C(2n,n)/(n+1)；括号序列、出栈序列、二叉树计数等组合模型。", "逆元-7": "模素数用费马小定理快速幂；通用用 EXGCD；预处理阶乘逆元做组合数。", "矩阵-6": "矩阵乘法 + 快速幂优化线性递推；关键是构造转移矩阵（常数列向量形式）。", "快速幂": "二进制拆解指数 O(log b)；整数幂取模；推广到矩阵快速幂。", "孙子定理-7": "CRT 解互质模数同余组；一般模数用 EXCRT 逐次合并；注意无解判定。", "高斯消元-7": "增广矩阵初等行变换化为阶梯形；解线性方程组/求秩；异或方程组用行异或。", "鸽巢原理-6": "抽屉原理构造分组得“至少存在”结论；计数与存在性证明的常用工具。", "哈希-6": "字符串哈希（自然溢出/双模）判子串相等；随机权值哈希维护集合/图状态。", "KMP-5": "next 数组 = 最长前后缀 border；失配 O(n) 回退；可求循环节。", "字典树-6": "Trie 建树 O(len)；01 Trie 求异或最值；多串前缀统计。", "ST表": "倍增预处理区间最值，O(1) 查询；数组不可变；RMQ 经典。", "ST表-6": "倍增预处理区间最值 O(1) 查询；配合分类讨论解决两数组区间博弈。", "堆": "priority_queue 维护动态最值；对顶堆维护中位数；反悔贪心用小根堆。", "堆排序-6": "建堆 O(n) / 堆排序 O(n log n)；堆顶最值 + 替换下沉。", "归并排序-5": "分治排序 O(n log n)；归并过程统计逆序对。", "快速排序-5": "分治选主元 O(n log n)；nth_element 求第 k 小；注意最坏退化。", "记忆化搜索": "DFS + 状态缓存：先定状态维度，返回值直接查表；等价 DP 但实现直观。", "记忆化搜索-6": "DFS + 状态缓存：先定状态维度，返回值直接查表；等价 DP 但实现直观。", "进制转换 位运算": "除基取余做进制转换；位运算技巧：n&(n-1) 判 2 的幂、lowbit、枚举子集。", "离散化": "把大范围值映射到连续整数 1..m；配合树状数组/线段树处理区间计数。", "树前缀和": "DFS 序将树上问题转区间；前缀和/差分处理路径与子树统计。", "树上差分": "路径端点加、LCA 处减：边权差分与点权差分模板；最后 DFS 累加。", "割点": "Tarjan 判割点：low[v]>=dfn[u]（根节点需两个孩子）；非根判定。", "割边": "桥判定：low[v]>dfn[u]；注意重边处理（记录父边编号）。", "点双": "Tarjan 求点双连通分量（栈维护）；割点属于多个点双。", "边双": "Tarjan 求边双连通分量（桥删后连通块）；可缩点成树。", "缩点": "SCC/边双缩点成 DAG/树；在新图上跑 DP 或拓扑递推。", "分层图": "把 k 次特殊操作拆成 k+1 层图，层间连 0 权边，跑最短路；经典思路。", "平衡树-8": "treap/splay 支持插入删除、第 k 大、前驱后继；也可用线段树/树状数组模拟。", "斜率优化DP-8": "转移化为 y=kx+b，用单调队列维护凸包；注意斜率单调性与坐标符号。", "单调队列 优化DP-8": "窗口最值辅助 DP 转移，均摊 O(n)；队尾弹劣保持单调。", "分数规划": "0/1 分数规划二分答案 r：验证 Σ(w_i - r*p_i) 最值是否 >= 0。", "最优比率生成树": "分数规划 + 最小生成树：二分 r，边权改为 w-r*p 后求 MST 判权值符号。", "CDQ分治": "离线分治：左半区间对右半区间的贡献统一计算；可解三维偏序。", "八皇后位运算": "位掩码（列/主对角/副对角）加速 DFS 剪枝；状态压缩思想。", "多倍并查集": "扩展域并查集：k 倍空间表达 k 种相对关系（如 2 倍判奇偶/团伙）。", "欧拉回路": "所有非零度点连通 + 入度=出度（有向）/ 度数均为偶（无向）；DFS 删边走，回溯记录路径。", "欧拉回路-6": "所有非零度点连通 + 入度=出度（有向）/ 度数均为偶（无向）；DFS 删边走，回溯记录路径。", "字符串": "字符串处理工具箱：哈希、KMP、Trie、manacher；先识别模式再选结构。", "杂项": "综合应用：分解子问题逐一建模；先暴力拿部分分，再针对性优化。", "在线": "在线处理/可持久化方向：先离线思考是否可排序、分治、二分答案；再考虑可持久化数据结构。", "筛选法 分解质因数 GCD/LCM": "埃氏/线性筛预处理素数与最小质因子；GCD=辗转相除，LCM=a/gcd*b。", "最短路-6 次短路-7": "Dijkstra 堆优化求最短路；双状态同时维护最短路与次短路。", "生成树/LCA": "生成树 + LCA 结合：最小瓶颈路径、树上换边问题；先建树再倍增。", "并查集/LCA": "并查集离线（Tarjan-LCA 思想）或按序合并处理树上询问。", "并查集/二分图": "扩展域并查集模拟二分图染色判定；或并查集维护“相对关系”替代 DFS 染色。"};
+const HINT_DEFAULT = "先明确数据范围与复杂度上限，写暴力拿部分分；核心思路参考对应知识点复习卡片与模板。";
+
+/* ================= 渲染 ================= */
+const kpGrid = document.getElementById('kpGrid');
+const probGrid = document.getElementById('probGrid');
+const linkPanel = document.getElementById('linkPanel');
+let linkFrom = null; // {type, id, label}
+
+function renderKnowledge(){
+  kpGrid.innerHTML = KNOWLEDGE.map(k => `
+    <div class="kp-card" id="${k.id}" onclick="selectKP('${k.id}')">
+      <div class="kp-head">
+        <span class="name">${k.name}</span>
+        <span class="pill ${k.color} lv">${k.lv}</span>
+      </div>
+      <div class="kp-body">
+        <div class="desc">${k.desc}</div>
+        <div class="taglist">${k.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="kp-links">关联真题：${k.links.map(id=>{
+        const p = PROBLEMS.find(x=>x.id===id);
+        return `<span class="lnk" data-prob="${id}" onclick="event.stopPropagation();selectProb('${id}')">${p?p.year+' '+p.no:''}</span>`;
+      }).join('')}</div>
+    </div>
+  `).join('');
+}
+
+function renderProblems(){
+  probGrid.innerHTML = PROBLEMS.map(p => `
+    <div class="prob-card" id="${p.id}" onclick="selectProb('${p.id}')">
+      <div class="prob-top">
+        <span class="year">${p.year}</span>
+        <span class="no">${p.no}</span>
+        <span class="name">${p.name}</span>
+      </div>
+      <div class="prob-body">
+        <div class="point"><b>要点：</b>${p.point}</div>
+        <div class="point"><b>涉及：</b>${p.kp.join(' / ')}</div>
+      </div>
+      <div class="prob-kp">${p.kpIds.map(id=>{
+        const k = KNOWLEDGE.find(x=>x.id===id);
+        return `<span class="chip" data-kp="${id}" onclick="event.stopPropagation();selectKP('${id}')">${k?k.name:''}</span>`;
+      }).join('')}</div>
+    </div>
+  `).join('');
+}
+
+/* ================= 联动 ================= */
+function clearLink(){
+  linkFrom = null;
+  document.querySelectorAll('.kp-selected,.prob-selected').forEach(el=>el.classList.remove('kp-selected','prob-selected'));
+  document.getElementById('lpFrom').textContent = '未选择来源';
+  document.getElementById('lpTo').textContent = '未选择目标';
+  linkPanel.style.borderColor = 'var(--cyan)';
+}
+
+function setPanel(from, to){
+  document.getElementById('lpFrom').textContent = from;
+  document.getElementById('lpTo').textContent = to;
+}
+
+function selectKP(id){
+  const card = document.getElementById(id);
+  const isSel = card.classList.contains('kp-selected');
+  document.querySelectorAll('.kp-selected').forEach(el=>el.classList.remove('kp-selected'));
+  document.querySelectorAll('.prob-selected').forEach(el=>el.classList.remove('prob-selected'));
+  if(isSel){ clearLink(); return; }
+  card.classList.add('kp-selected');
+  const k = KNOWLEDGE.find(x=>x.id===id);
+  k.links.forEach(pid=>{ const el=document.getElementById(pid); if(el) el.classList.add('prob-selected'); });
+  if(linkFrom && linkFrom.type==='prob'){
+    setPanel(linkFrom.label, '知识点：'+k.name);
+    linkFrom = {type:'kp', id, label:'知识点：'+k.name};
+  } else {
+    setPanel('知识点：'+k.name, '已高亮 ' + k.links.length + ' 道真题');
+    linkFrom = {type:'kp', id, label:'知识点：'+k.name};
+  }
+}
+
+function selectProb(id){
+  const card = document.getElementById(id);
+  const isSel = card.classList.contains('prob-selected');
+  document.querySelectorAll('.kp-selected').forEach(el=>el.classList.remove('kp-selected'));
+  document.querySelectorAll('.prob-selected').forEach(el=>el.classList.remove('prob-selected'));
+  if(isSel){ clearLink(); return; }
+  card.classList.add('prob-selected');
+  const p = PROBLEMS.find(x=>x.id===id);
+  p.kpIds.forEach(kid=>{ const el=document.getElementById(kid); if(el) el.classList.add('kp-selected'); });
+  if(linkFrom && linkFrom.type==='kp'){
+    setPanel(linkFrom.label, '真题：'+p.year+' '+p.no+' '+p.name);
+    linkFrom = {type:'prob', id, label:'真题：'+p.year+' '+p.no+' '+p.name};
+  } else {
+    setPanel('真题：'+p.year+' '+p.no+' '+p.name, '已高亮 ' + p.kpIds.length + ' 个知识点');
+    linkFrom = {type:'prob', id, label:'真题：'+p.year+' '+p.no+' '+p.name};
+  }
+}
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') clearLink(); });
+
+renderKnowledge();
+renderProblems();
+
+/* ================= 在线刷题 ================= */
+const QUIZ_KEY = 'csp2026_quiz_v1';
+let quizFilter = {group:'ALL', cat:'ALL', diff:'ALL'};
+let quizProgress = loadQuizProgress();
+
+function loadQuizProgress(){
+  try{ return JSON.parse(localStorage.getItem(QUIZ_KEY)) || {}; }catch(e){ return {}; }
+}
+function saveQuizProgress(){
+  localStorage.setItem(QUIZ_KEY, JSON.stringify(quizProgress));
+}
+
+const quizCats = [...new Set(QUESTION_BANK.map(q=>q.cat))].sort();
+
+function quizStatus(pid){ return quizProgress[pid] || null; }
+function quizStatusText(pid){
+  const s = quizStatus(pid);
+  if(s==='done') return '<span class="qc-status s-done">[AC]</span>';
+  if(s==='wrong') return '<span class="qc-status s-wrong">[WRONG]</span>';
+  return '<span class="qc-status s-none">[TODO]</span>';
+}
+function diffLabel(d){
+  if(d<=3) return '入门';
+  if(d<=5) return '普及/提高';
+  if(d===6) return '提高';
+  if(d===7) return '省选';
+  return 'NOI';
+}
+function luoguUrl(no){
+  const n = String(no);
+  return 'https://www.luogu.com.cn/problem/' + (/^[Bb]/.test(n) ? n : 'P'+n);
+}
+function filteredQuiz(){
+  return QUESTION_BANK.filter(q=>{
+    if(quizFilter.group!=='ALL' && q.group!==quizFilter.group) return false;
+    if(quizFilter.cat!=='ALL' && q.cat!==quizFilter.cat) return false;
+    if(quizFilter.diff!=='ALL'){
+      const d = Number(quizFilter.diff);
+      if(d===3 && !(Number(q.diff)<=3)) return false;
+      if(d===5 && !(Number(q.diff)>=4 && Number(q.diff)<=5)) return false;
+      if(d===6 && !(Number(q.diff)===6)) return false;
+      if(d===7 && !(Number(q.diff)===7)) return false;
+      if(d===8 && !(Number(q.diff)>=8)) return false;
+    }
+    return true;
+  });
+}
+function renderQuizStats(list){
+  const total = list.length;
+  const done = list.filter(q=>quizStatus(q.id)==='done').length;
+  const wrong = list.filter(q=>quizStatus(q.id)==='wrong').length;
+  const tried = done + wrong;
+  const rate = total ? Math.round(tried/total*100) : 0;
+  const allTried = QUESTION_BANK.filter(q=>quizStatus(q.id)).length;
+  document.getElementById('quizStats').innerHTML =
+    '<div class="quiz-stat-card"><div class="qsv">'+QUESTION_BANK.length+'</div><div class="qsk">题库总题数</div></div>'+
+    '<div class="quiz-stat-card"><div class="qsv">'+allTried+'</div><div class="qsk">累计已做</div></div>'+
+    '<div class="quiz-stat-card"><div class="qsv green">'+done+'</div><div class="qsk">当前范围 AC</div></div>'+
+    '<div class="quiz-stat-card"><div class="qsv red">'+wrong+'</div><div class="qsk">当前范围错题</div></div>'+
+    '<div class="quiz-stat-card"><div class="qsv yellow">'+rate+'%</div><div class="qsk">当前范围完成率</div></div>';
+  document.getElementById('qfCount').textContent = 'MATCH ' + total;
+}
+function renderQuiz(){
+  const list = filteredQuiz();
+  renderQuizStats(list);
+  const box = document.getElementById('quizList');
+  if(!list.length){ box.innerHTML = '<div class="quiz-empty">NO MATCH · 请调整筛选条件</div>'; return; }
+  box.innerHTML = list.map(q=>{
+    const st = quizStatus(q.id);
+    const cls = st==='done' ? 'qc-done' : (st==='wrong' ? 'qc-wrong' : '');
+    return '<div class="quiz-card '+cls+'" id="qc-'+q.id+'">'+
+      '<div class="qc-top">'+
+        '<span class="qc-no">'+q.no+'</span>'+
+        '<span class="pill cyan qc-tag">'+q.group+'</span>'+
+        '<span class="diff-pill diff-'+Math.min(Math.max(Number(q.diff),1),10)+'">D'+q.diff+' · '+diffLabel(q.diff)+'</span>'+
+        '<span class="qc-cat">'+q.cat+'</span>'+
+      '</div>'+
+      '<div class="qc-body">'+
+        '<a class="btn" style="padding:5px 12px;font-size:11.5px" href="'+luoguUrl(q.no)+'" target="_blank" rel="noopener">LUOGU ↗</a>'+
+        quizStatusText(q.id)+
+      '</div>'+
+      '<div class="qc-actions">'+
+        '<span class="btn" onclick="toggleAns(''+q.id+'')">作答 / 核对思路</span>'+
+        '<span class="btn green" onclick="markQuiz(''+q.id+'','done')">MARK AC</span>'+
+        '<span class="btn red" onclick="markQuiz(''+q.id+'','wrong')">MARK WRONG</span>'+
+      '</div>'+
+      '<div class="ans-panel" id="ans-'+q.id+'">'+
+        '<div class="ans-hint"><b style="color:var(--purple)">[THINK] </b>'+(ANSWER_HINTS[q.cat]||HINT_DEFAULT)+'</div>'+
+        '<div style="font-size:11.5px;color:var(--dim)">作答流程：先在洛谷独立完成代码 → 返回此处展开“作答 / 核对思路”比对知识点要点 → 如实自评 AC 或标记错题（错题进入错题簿统计）。</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+function toggleAns(id){
+  const el = document.getElementById('ans-'+id);
+  if(el) el.classList.toggle('open');
+}
+function markQuiz(id, st){
+  quizProgress[id] = st;
+  saveQuizProgress();
+  renderQuiz();
+}
+function randomQuiz(n){
+  const list = filteredQuiz();
+  if(!list.length){ renderQuiz(); return; }
+  const picked = [...list].sort(()=>Math.random()-0.5).slice(0, Math.min(n, list.length));
+  renderQuiz();
+  document.querySelectorAll('.random-hit').forEach(e=>e.classList.remove('random-hit'));
+  picked.forEach(q=>{ const el=document.getElementById('qc-'+q.id); if(el) el.classList.add('random-hit'); });
+  const first = document.getElementById('qc-'+picked[0].id);
+  if(first){ first.scrollIntoView({behavior:'smooth', block:'center'}); }
+}
+function resetFilter(){
+  quizFilter = {group:'ALL', cat:'ALL', diff:'ALL'};
+  document.getElementById('qfGroup').value='ALL';
+  document.getElementById('qfCat').value='ALL';
+  document.getElementById('qfDiff').value='ALL';
+  renderQuiz();
+}
+function resetQuizProgress(){
+  if(confirm('确定清空全部刷题进度与错题记录？此操作不可撤销。')){
+    quizProgress = {};
+    localStorage.removeItem(QUIZ_KEY);
+    renderQuiz();
+  }
+}
+function initQuiz(){
+  const catSel = document.getElementById('qfCat');
+  catSel.innerHTML = '<option value="ALL">全部知识点</option>' + quizCats.map(c=>'<option value="'+c+'">'+c+'</option>').join('');
+  document.getElementById('qfGroup').addEventListener('change', e=>{ quizFilter.group = e.target.value; renderQuiz(); });
+  document.getElementById('qfCat').addEventListener('change', e=>{ quizFilter.cat = e.target.value; renderQuiz(); });
+  document.getElementById('qfDiff').addEventListener('change', e=>{ quizFilter.diff = e.target.value; renderQuiz(); });
+  renderQuiz();
+}
+initQuiz();
+</script>
+</body>
+</html>
