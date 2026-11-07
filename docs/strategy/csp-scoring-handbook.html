@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="docx-page-size" content="A4">
+  <title>CSP-J/S 复赛抢分技巧与题型分析手册</title>
+  <style>
+  :root {
+    /* Page layout */
+    --page-content-width: 15.6cm;
+    /* Typography */
+    --fs-title: 26pt;
+    --fs-h1: 18pt;
+    --fs-h2: 15pt;
+    --fs-h3: 13pt;
+    --fs-body: 12pt;
+    --fs-small: 10pt;
+    --ff-heading: "SimHei", "黑体", "Microsoft YaHei", sans-serif;
+    --ff-body: "SimSun", "宋体", serif;
+    --lh-body: 1.7;
+    --lh-heading: 1.3;
+    --fw-bold: 700;
+    --fw-normal: 400;
+    /* Color */
+    --color-primary: #2563EB;
+    --color-text: #111827;
+    --color-muted: #6B7280;
+    --color-border: #E5E7EB;
+    --color-bg: #FFFFFF;
+    --color-code-bg: #F9FAFB;
+    --color-highlight: #FEF3C7;
+    /* Spacing */
+    --spacing-paragraph: 0.5em;
+    --spacing-section: 1.6em;
+    --spacing-block: 1em;
+    --margin-page: 2.5cm;
+    --sp-02: 0.2em;
+    --sp-03: 0.3em;
+    --sp-04: 0.4em;
+    --sp-1: 1em;
+    --sp-15: 1.5em;
+    --sp-2: 2em;
+    --sp-3: 3em;
+    --sp-6: 6em;
+    --sp-7: 7em;
+    --pad-cell: 0.4em 0.7em;
+    --pad-tip: 0.5em 0.8em;
+    /* Extra color */
+    --color-danger: #B91C1C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--ff-body);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    color: var(--color-text);
+    background: var(--color-bg);
+    max-width: var(--page-content-width);
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--ff-heading);
+    line-height: var(--lh-heading);
+    font-weight: var(--fw-bold);
+    margin-top: var(--spacing-section);
+    margin-bottom: var(--spacing-block);
+    text-align: left;
+    text-indent: 0;
+  }
+  h1 { font-size: var(--fs-h1); color: var(--color-primary); }
+  h2 { font-size: var(--fs-h2); color: var(--color-text); }
+  h3 { font-size: var(--fs-h3); color: var(--color-text); }
+
+  p {
+    margin-bottom: var(--spacing-paragraph);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    text-indent: 2em;
+    text-align: justify;
+  }
+  p.no-indent { text-indent: 0; }
+
+  ul, ol { padding-left: var(--sp-2); margin-bottom: var(--spacing-paragraph); }
+  li {
+    margin-bottom: var(--sp-03);
+    font-size: var(--fs-body);
+    line-height: var(--lh-body);
+    text-indent: 0;
+    text-align: justify;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: var(--spacing-block);
+  }
+  th, td {
+    padding: var(--pad-cell);
+    border: 1px solid var(--color-border);
+    font-size: var(--fs-body);
+    line-height: 1.5;
+    text-indent: 0;
+    text-align: left;
+    vertical-align: middle;
+  }
+  th { font-weight: var(--fw-bold); background: var(--color-code-bg); }
+
+  /* 单段落强调提示 */
+  .tip-warn {
+    border-left: 3px solid var(--color-primary);
+    background: var(--color-highlight);
+    padding: var(--pad-tip);
+    text-indent: 0;
+    margin-bottom: var(--spacing-block);
+  }
+  .tip-danger {
+    border-left: 3px solid var(--color-danger);
+    background: var(--color-highlight);
+    padding: var(--pad-tip);
+    text-indent: 0;
+    margin-bottom: var(--spacing-block);
+  }
+
+  /* 封面 */
+  .cover-eyebrow {
+    text-align: center;
+    text-indent: 0;
+    font-family: var(--ff-heading);
+    font-size: var(--fs-small);
+    letter-spacing: 0.5em;
+    color: var(--color-muted);
+    margin-top: var(--sp-7);
+    margin-bottom: var(--sp-2);
+  }
+  section[role="cover"] > p.cover-title {
+    text-align: center;
+    text-indent: 0;
+    font-family: var(--ff-heading);
+    font-size: var(--fs-title);
+    font-weight: var(--fw-bold);
+    color: var(--color-primary);
+    line-height: 1.4;
+    margin-bottom: var(--sp-1);
+  }
+  .cover-subtitle {
+    text-align: center;
+    text-indent: 0;
+    font-family: var(--ff-body);
+    font-size: var(--fs-h3);
+    color: var(--color-text);
+    margin-bottom: var(--sp-1);
+  }
+  .cover-meta {
+    text-align: center;
+    text-indent: 0;
+    font-size: var(--fs-small);
+    color: var(--color-muted);
+    margin-top: var(--sp-6);
+  }
+
+  /* 目录 */
+  .toc-page-title {
+    text-align: center;
+    text-indent: 0;
+    font-family: var(--ff-heading);
+    font-size: var(--fs-h1);
+    font-weight: var(--fw-bold);
+    color: var(--color-text);
+    margin-top: var(--sp-3);
+    margin-bottom: var(--sp-15);
+  }
+  .toc-list, .toc-list ol, .toc-list ul {
+    list-style: none;
+    list-style-type: none;
+    padding-left: 0;
+  }
+  .toc-list > li {
+    font-family: var(--ff-heading);
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-body);
+    margin-bottom: var(--sp-04);
+    text-indent: 0;
+  }
+  .toc-list ol { padding-left: var(--sp-2); margin-top: var(--sp-02); }
+  .toc-list ol > li {
+    font-family: var(--ff-body);
+    font-weight: var(--fw-normal);
+    font-size: var(--fs-body);
+    margin-bottom: var(--sp-02);
+    text-indent: 0;
+  }
+  .toc-list a { color: var(--color-text); text-decoration: none; }
+  .toc-note {
+    text-indent: 0;
+    font-size: var(--fs-small);
+    color: var(--color-muted);
+    margin-top: var(--sp-2);
+  }
+
+  /* 页面规则（页眉页脚模型） */
+  @page { @bottom-center { content: "第 " counter(page) " 页"; } }
+  @page cover { @bottom-center { content: none; } }
+  section[role="cover"] { page: cover; }
+  </style>
+</head>
+<body>
+  <section role="cover">
+    <p class="cover-eyebrow">CSP-J / CSP-S 复赛备考内参</p>
+    <p class="cover-title">CSP-J/S 复赛抢分技巧<br>与题型分析手册</p>
+    <p class="cover-subtitle">数据范围倒推得分点 · 保底分先行 · 题型快速识别</p>
+    <p class="cover-meta">比赛专用抢分资料 · 仅限复赛使用 · 2026 年 10 月整理</p>
+  </section>
+
+  <section role="cover">
+    <p class="toc-page-title">目&nbsp;&nbsp;录</p>
+    <nav class="doc-toc" aria-label="文档目录">
+      <ol class="toc-list">
+        <li><a href="#section-1">一、核心抢分策略：按数据范围拿分</a></li>
+        <li><a href="#section-2">二、CSP-J 近三年（2023—2025）骗分保底得分汇总</a></li>
+        <li><a href="#section-3">三、CSP-J/S 近年规律分析</a>
+          <ol>
+            <li><a href="#section-3-1">（一）J 组：题号题型高度固化，定位极其稳定</a></li>
+            <li><a href="#section-3-2">（二）S 组：难度跃迁更明显，不同水平的得分目标</a></li>
+          </ol>
+        </li>
+        <li><a href="#section-4">四、2026 年题型预测（仅供参考）</a>
+          <ol>
+            <li><a href="#section-4-1">（一）CSP-J（入门组）2026 题型预测</a></li>
+            <li><a href="#section-4-2">（二）CSP-S（提高组）2026 题型预测</a></li>
+          </ol>
+        </li>
+        <li><a href="#section-5">五、题型快速判断：关键词眼 + 识别技巧</a></li>
+        <li><a href="#section-6">六、一秒定位的辅助技巧</a></li>
+        <li><a href="#section-7">七、考场铁律（切记切记）</a></li>
+      </ol>
+    </nav>
+    <p class="toc-note">说明：本文档为复赛比赛专用抢分策略（应试技巧），仅限比赛时使用，平时训练不能依赖。核心思路：盯紧数据范围，倒推得分点，确保 4 道题的保底分全部拿到后，再去攻坚正解。</p>
+  </section>
+
+  <section role="body" data-page-restart="1">
+
+    <h1 id="section-1">一、核心抢分策略：按数据范围拿分</h1>
+    <p>题目的数据范围绝对能骗到分，多少的问题。按以下几种情况处理：</p>
+
+    <h2 id="section-1-1">（一）特判边界情况（n=0 或 n=1）</h2>
+    <ul>
+      <li>当 <strong>n = 0</strong> 或 <strong>n = 1</strong> 时，值是多少，<strong>一定要用 if 写出来</strong>。</li>
+      <li>写出来就是 <strong>10～20 分</strong>，绝对的。</li>
+    </ul>
+
+    <h2 id="section-1-2">（二）小数据直接暴力（n &lt; 10）</h2>
+    <ul>
+      <li>当 n &lt; 10 时，直接 DFS 暴力，枚举 1～10 之间 n 的所有可能性并输出答案。</li>
+      <li>不会超时，也有 <strong>10～20 分</strong>。</li>
+    </ul>
+
+    <h2 id="section-1-3">（三）中等数据降级算法（n &lt; 5000）</h2>
+    <ul>
+      <li>当 n &lt; 5000 时，把算法降到 <strong>O(n²) 级别</strong>——想办法压缩到一个 for 嵌套一个 for 算出来。</li>
+      <li>这 <strong>30 分</strong>也能拿。</li>
+    </ul>
+
+    <h2 id="section-1-4">（四）后面的优化分：放弃</h2>
+    <ul>
+      <li>没思路的情况下，<strong>一定一定要</strong>按上面三步走，把保底分拿满。</li>
+    </ul>
+
+    <h1 id="section-2">二、CSP-J 近三年（2023—2025）骗分保底得分汇总</h1>
+    <p>以下是「不会正解、只写骗分代码」可拿到的最低分数：</p>
+
+    <h2 id="section-2-1">（一）2023 年</h2>
+    <table>
+      <thead>
+        <tr><th>题号</th><th>题目</th><th>题型</th><th>保底分</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T1</td><td>小苹果</td><td>数学模拟</td><td>50～100 分</td></tr>
+        <tr><td>T2</td><td>公路</td><td>贪心</td><td>65 分</td></tr>
+        <tr><td>T3</td><td>一元二次方程</td><td>数学模拟</td><td>50 分</td></tr>
+        <tr><td>T4</td><td>旅游巴士</td><td>图论搜索</td><td>25 分</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="section-2-2">（二）2024 年</h2>
+    <table>
+      <thead>
+        <tr><th>题号</th><th>题目</th><th>题型</th><th>保底分</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T1</td><td>扑克牌</td><td>字符串标记</td><td>100 分</td></tr>
+        <tr><td>T2</td><td>地图探险</td><td>大模拟</td><td>100 分</td></tr>
+        <tr><td>T3</td><td>小木棍</td><td>数学构造</td><td>80 分</td></tr>
+        <tr><td>T4</td><td>接龙</td><td>DP</td><td>15 分</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="section-2-3">（三）2025 年</h2>
+    <table>
+      <thead>
+        <tr><th>题号</th><th>题目</th><th>题型</th><th>保底分</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>T1</td><td>拼数</td><td>计数排序</td><td>100 分</td></tr>
+        <tr><td>T2</td><td>座位</td><td>排序模拟</td><td>100 分</td></tr>
+        <tr><td>T3</td><td>异或和</td><td>DP</td><td>70 分</td></tr>
+        <tr><td>T4</td><td>多边形</td><td>背包计数</td><td>24 分</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="section-2-4">（四）整体保底总分参考</h2>
+    <ul>
+      <li><strong>2023 年</strong>：仅用骗分总分可达到 <strong>240 分以上</strong>。</li>
+      <li><strong>2024 年</strong>：保底总分约 <strong>295 分</strong>。</li>
+      <li><strong>2025 年</strong>：保底总分约 <strong>294 分</strong>。</li>
+    </ul>
+    <p class="tip-warn">&nbsp;&nbsp;用这套抢分办法，T1、T2 满分的情况下，正常能达到的分数就是 J 组一等奖线（J1）。也就是一毛线高级算法不会、只会 DFS，只要理解题意，按办法去盯数据范围、倒推得分点，就能拿分。</p>
+
+    <h1 id="section-3">三、CSP-J/S 近年规律分析</h1>
+
+    <h2 id="section-3-1">（一）J 组：题号题型高度固化，定位极其稳定</h2>
+    <p>近 7 年 J 组 4 道题的功能分层非常固定，备考可以直接按题号针对性训练：</p>
+
+    <h3 id="section-3-1-1">1. T1 纯签到题</h3>
+    <p>不涉及复杂算法，本质是「遍历 + 计数 / 简单模拟」，考点集中在字符串、桶计数、基础数学模拟，代码量极小，是<strong>必须满分的题</strong>。丢分几乎都来自数据范围溢出、文件名写错等细节失误。</p>
+
+    <h3 id="section-3-1-2">2. T2 模拟 / 基础算法题</h3>
+    <p>以排序、贪心、前缀和 / 差分为核心考点，思维难度低，主要考验代码实现的细心度，正常训练目标也是冲满分。近年前缀和思想有从 T4 下沉到 T2 的趋势。</p>
+
+    <h3 id="section-3-1-3">3. T3 中档分水岭</h3>
+    <p>以数学推导、构造、性质观察为核心，连续多年设置「性质 A/B/C」的送分档，暴力 + 基础性质就能拿 70～80 分，满分解需要一定的思维推导能力，是<strong>奖项区分的核心题</strong>。</p>
+
+    <h3 id="section-3-1-4">4. T4 压轴题</h3>
+    <p>以基础 DP（背包、线性 DP）、简单图论搜索为主，满分难度高，但暴力 DFS、朴素 DP 稳定能拿 20～30 分保底，是高分选手拉开差距的地方。</p>
+
+    <h3 id="section-3-1-5">5. J 组考点与得分特点</h3>
+    <ul>
+      <li><strong>考点严格限定在入门范围</strong>：只考模拟、贪心、排序、枚举、搜索、基础 DP、简单数论，完全不涉及高级数据结构（线段树、平衡树等均不考察）。</li>
+      <li><strong>骗分性价比极高</strong>：只写基础暴力代码，就能拿到 240～290 分左右的保底分，刚好覆盖多数省份一等奖的门槛区间，这是 J 组最核心的应试策略。</li>
+      <li><strong>区分度集中在后两题</strong>：前两题大部分选手都能接近满分，拉不开差距；获奖排名基本由 T3、T4 的部分分完成度决定。</li>
+    </ul>
+
+    <h2 id="section-3-2">（二）S 组：难度跃迁更明显，不同水平的得分目标</h2>
+    <p>S 组 4 道题的难度跃迁比 J 组更明显，对应不同水平选手的得分目标：</p>
+
+    <h3 id="section-3-2-1">1. T1 基础签到题</h3>
+    <p>难度接近 J 组 T2～T3，近年趋势是「包装成大模拟的贪心 / 简单数学」，题面长但核心逻辑简单，细心实现就能拿满，是所有选手的必拿分。</p>
+
+    <h3 id="section-3-2-2">2. T2 中档核心分水岭</h3>
+    <p>考察核心是「建模能力」——把生活化的题目场景翻译成经典算法模型，常见考点是二分答案、贪心、前缀和、区间 / 树形 DP、基础图论。大部分选手能拿 60～80 分，<strong>能不能冲一等奖基本看这题的完成度</strong>。</p>
+
+    <h3 id="section-3-2-3">3. T3 中高档难题</h3>
+    <p>一般是字符串处理、进阶 DP、中等数据结构（Trie、线段树基础应用）或图论进阶，满分门槛高，但子任务梯度充足，暴力 + 特殊性质能稳定拿 50～70 分。</p>
+
+    <h3 id="section-3-2-4">4. T4 压轴难题</h3>
+    <p>多为跨模块综合题，覆盖高级 DP、复杂图论（网络流、树上高级算法）、高级数据结构，普通选手只能拿 10～30 分暴力分，是省队级高分选手的核心区分点。</p>
+
+    <h3 id="section-3-2-5">5. S 组核心考点趋势</h3>
+    <ul>
+      <li><strong>思维权重持续上升，纯码量题减少</strong>：早年的大模拟题占比明显下降，现在更看重「问题转化」能力，很多题是"想得到就几行代码，想不到就只能暴力"，单纯背模板的收益降低。</li>
+      <li><strong>DP 和图论是绝对重点</strong>：每年至少 2 道 DP 相关题目，图论题占比接近 40%；考察方向从"经典算法默写"转向"场景建模"，比如把实际问题转化为最短路、最小生成树模型。</li>
+      <li><strong>数学 / 构造占比大幅提升</strong>：数论、组合数学、性质推导类题目占比从 20% 涨到 30% 以上，和 J 组呼应，都喜欢设置特殊性质子任务，引导选手逐步推导正解。</li>
+      <li><strong>跨模块综合题成为常态</strong>：一道题结合字符串 + 数据结构、图论 + DP、数学 + 贪心等多个模块，考察「拆解问题 → 归结到已知算法 → 组合求解」的综合能力，而非单个知识点的记忆。</li>
+    </ul>
+
+    <h1 id="section-4">四、2026 年题型预测（仅供参考）</h1>
+    <p class="tip-warn">&nbsp;&nbsp;以下预测不一定准，考场完全压错的情况下不要心态崩。另外，要通过题目字眼去区分题型：如果板子忘了，或者死活调不好，果断转暴力拿保底。</p>
+
+    <h2 id="section-4-1">（一）CSP-J（入门组）2026 题型预测</h2>
+    <p>按题号定位逐题预判如下，考前按此清单核对板子与骗分预案：</p>
+
+    <h3 id="section-4-1-1">1. T1 签到题（目标：满分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：字符串基础处理 / 桶计数 / 简单数学模拟。</li>
+      <li><strong>命题逻辑</strong>：延续"零算法门槛，纯细心拿分"的定位，没有复杂逻辑，代码量通常 30 行以内。</li>
+      <li><strong>考法说明</strong>：近三年分别考了数组模拟、字符串标记、计数排序，今年轮换到字符串遍历统计、简单数学运算模拟的概率最高，属于必须拿满的送分题。</li>
+    </ul>
+
+    <h3 id="section-4-1-2">2. T2 基础算法 / 模拟题（目标：冲满分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：排序贪心 / 区间模拟 / 前缀和基础应用。</li>
+      <li><strong>命题逻辑</strong>：以"实现难度"为核心区分度，思维量低，主要考验代码细节和边界处理。</li>
+      <li><strong>考法说明</strong>：前两年分别考了纯贪心和纯大模拟，今年大概率是"排序 + 贪心"的结合，或者带前缀和技巧的流程模拟题，正常训练完全可以冲满分。</li>
+    </ul>
+
+    <h3 id="section-4-1-3">3. T3 中档分水岭（目标：保 70 冲满分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：数学性质推导 / 简单构造 / 线性 DP。</li>
+      <li><strong>命题逻辑</strong>：延续"子任务分档"设计，暴力能拿 30～50 分，找到核心性质就能拿 70～100 分，是决定奖项等级的核心题。</li>
+      <li><strong>考法说明</strong>：近三年分别是数学方程、数学构造、异或 DP，今年大概率还是数学性质类题目，会明确标注「性质 A/B」的送分档，<strong>优先把性质分全部写满</strong>。</li>
+    </ul>
+
+    <h3 id="section-4-1-4">4. T4 压轴题（目标：保 20～30 分，冲更高）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：线性 DP / 背包变种 / 基础图论搜索（DFS/BFS）。</li>
+      <li><strong>命题逻辑</strong>：满分难度高，但暴力分丰厚，朴素搜索或简单 DP 就能稳定拿到保底分。</li>
+      <li><strong>考法说明</strong>：近三年分别是图论 DFS、接龙 DP、背包计数，今年轮换到图论基础（树上遍历、带条件的最短路）的概率较高，也可能是区间 DP 入门。</li>
+    </ul>
+
+    <h2 id="section-4-2">（二）CSP-S（提高组）2026 题型预测</h2>
+    <p>S 组整体梯度更陡，逐题目标与预案如下：</p>
+
+    <h3 id="section-4-2-1">1. T1 基础签到题（目标：满分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：大场景包装的贪心 / 模拟 / 简单数学推导。</li>
+      <li><strong>命题逻辑</strong>：题面通常很长，包装复杂生活场景，但核心逻辑极其简单，本质是"去包装"的送分题。</li>
+      <li><strong>考法说明</strong>：不会考复杂算法，核心考验读题提炼能力，避免被长题干吓住，提取核心规则细心实现即可拿满。</li>
+    </ul>
+
+    <h3 id="section-4-2-2">2. T2 算法建模题（目标：冲一等奖核心，强烈怀疑会有树）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：二分答案 / 前缀和优化 DP / 基础图论建模。</li>
+      <li><strong>命题逻辑</strong>：核心考察「问题转化能力」——把生活化场景翻译成经典算法模型，是区分一等奖和二等奖的关键题。</li>
+      <li><strong>考法说明</strong>：弱化纯模板默写，强化场景建模，不会直接出"求最短路"这类裸题，需要自己把问题对应到二分、DP、最短路等经典模型。</li>
+    </ul>
+
+    <h3 id="section-4-2-3">3. T3 中高档难题（目标：保 50～70 分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：<strong>树形 DP（重点！去年 NOIP 已出现树形 DP，板子一定要会）</strong> / 字符串算法（KMP/Trie） / 基础数据结构应用。</li>
+      <li><strong>命题逻辑</strong>：子任务梯度明显，暴力 + 简单性质能拿过半分数，满分解需要掌握进阶算法和优化技巧。</li>
+      <li><strong>考法说明</strong>：今年考树形 DP 或字符串匹配的概率较高，也可能是线段树 / 树状数组的基础应用，优先拿完小数据和性质分。</li>
+    </ul>
+
+    <h3 id="section-4-2-4">4. T4 压轴综合题（目标：拿满暴力分）</h3>
+    <ul>
+      <li><strong>预测考点</strong>：图论 + DP 综合 / 数据结构优化 DP / 复杂图论算法。</li>
+      <li><strong>命题逻辑</strong>：省队级区分题，普通选手目标是拿满小数据暴力分，不硬磕正解。</li>
+      <li><strong>考法说明</strong>：通常是跨模块综合题，子任务从 n≤20 的暴力分到 n=1e5 的正解分梯度排布，优先写搜索、朴素 DP 拿保底。</li>
+    </ul>
+
+    <h1 id="section-5">五、题型快速判断：关键词眼 + 识别技巧</h1>
+
+    <h2 id="section-5-1">（一）模拟题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：规则、流程、依次、逐次、操作步骤、游戏过程、最终状态。</li>
+      <li><strong>快速判断</strong>：题面大段描述操作规则，问"最终结果 / 状态"，没有"最少、最多、最优"等极值要求，纯按要求写代码即可。</li>
+      <li><strong>常见题号</strong>：J 组 T1、T2；S 组 T1。</li>
+    </ul>
+
+    <h2 id="section-5-2">（二）贪心题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：最少、最多、最小代价、最大收益、尽可能、优先、相邻、排序。</li>
+      <li><strong>快速判断</strong>：求最优解，且直觉上"按某种顺序选择"就能得到答案，通常排序是核心前置步骤。</li>
+      <li><strong>常见题号</strong>：J 组 T2、T3；S 组 T1、T2。</li>
+    </ul>
+
+    <h2 id="section-5-3">（三）数学 / 构造 / 性质题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：性质 A/B、满足条件、构造、公式、倍数、约数、奇偶性、异或、规律。</li>
+      <li><strong>快速判断</strong>：有明确的子任务分档（比如"30% 数据暴力，60% 满足某性质"），纯暴力会超时，但推导数学规律后代码极短。</li>
+      <li><strong>常见题号</strong>：J 组 T3；S 组 T2、T3。</li>
+    </ul>
+
+    <h2 id="section-5-4">（四）动态规划（DP）题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：方案数、计数、最大价值、最小代价、选 / 不选、前 i 个、子序列、背包、接龙。</li>
+      <li><strong>快速判断</strong>：求方案数、求极值且贪心显然不成立，数据范围在 n=100～1e4 之间，优先考虑 DP。看到"计数""方案数"90% 概率是 DP。</li>
+      <li><strong>常见题号</strong>：J 组 T3、T4；S 组 T2、T3、T4。</li>
+    </ul>
+
+    <h2 id="section-5-5">（五）搜索题（DFS/BFS）</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：所有方案、枚举、路径、到达、连通、n≤20、小数据。</li>
+      <li><strong>快速判断</strong>：数据范围极小（n≤20/30），或者求所有可行解，直接写暴力搜索保底，是压轴题骗分的核心手段。</li>
+      <li><strong>常见题号</strong>：J 组 T4；S 组 T3、T4 的小数据分。</li>
+    </ul>
+
+    <h2 id="section-5-6">（六）图论题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：节点、边、路径、连通、最短路、树、图、道路、地点、距离。</li>
+      <li><strong>快速判断</strong>：明确给出点和边的结构，或者场景是"地点 + 道路""站点 + 线路"，本质都是图模型。</li>
+      <li><strong>常见题号</strong>：J 组 T4；S 组 T2、T4。</li>
+    </ul>
+
+    <h2 id="section-5-7">（七）数据结构题</h2>
+    <ul>
+      <li><strong>核心关键词</strong>：区间修改、区间查询、单点修改、多次查询、第 k 大、前缀和、差分。</li>
+      <li><strong>快速判断</strong>：有多次修改 + 多次查询，数据范围 n、q ≥ 1e4，暴力 O(nq) 超时，需要数据结构优化。J 组基本不考高级数据结构，S 组 T3/T4 出现。</li>
+    </ul>
+
+    <h1 id="section-6">六、一秒定位的辅助技巧</h1>
+
+    <h2 id="section-6-1">（一）先看数据范围</h2>
+    <table>
+      <thead>
+        <tr><th>数据范围</th><th>对应算法方向</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>n ≤ 20</td><td>暴力搜索 / 状态压缩 DP</td></tr>
+        <tr><td>n ≤ 1000</td><td>O(n²) DP / 暴力枚举</td></tr>
+        <tr><td>n ≤ 1e5</td><td>O(n log n) 贪心 / 排序 / 数据结构 / 二分</td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="section-6-2">（二）再看问题类型</h2>
+    <ul>
+      <li>问"行不行 / 能不能" → 二分答案、搜索。</li>
+      <li>问"多少种方案" → DP、组合数学。</li>
+      <li>问"最少 / 最多" → 贪心、DP、图论最短路。</li>
+    </ul>
+
+    <h2 id="section-6-3">（三）按题号预判方向</h2>
+    <ul>
+      <li><strong>J 组</strong>：按「T1 模拟 → T2 贪心 / 模拟 → T3 数学 → T4 DP / 图论」的惯性先预设方向，读题验证即可。</li>
+      <li><strong>S 组</strong>：按「T1 简单 → T2 建模 → T3 进阶 → T4 综合」的梯度预判，能大幅节省读题思考时间。</li>
+    </ul>
+
+    <h1 id="section-7">七、考场铁律（切记切记）</h1>
+    <p class="tip-danger">&nbsp;&nbsp;<strong>1. 保底优先</strong>：如果题目板子忘了，或者死活调不好，果断转暴力拿保底。</p>
+    <p class="tip-danger">&nbsp;&nbsp;<strong>2. 一定要确保 4 道题的保底分都拿了，再去搓板子。</strong>切记切记！</p>
+    <p class="tip-danger">&nbsp;&nbsp;<strong>3. 本套方法属比赛抢分技巧，只能在比赛时用，平时不能用。</strong></p>
+
+  </section>
+</body>
+</html>
