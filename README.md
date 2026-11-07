@@ -92,6 +92,10 @@ powershell -ExecutionPolicy Bypass -File tools/push-to-github.ps1
 
 ---
 
+## 📎 附加文档
+
+- [CSP-J/S 复赛抢分技巧与题型分析手册](docs/strategy/csp-scoring-handbook.html) —— 应试抢分策略专册：按数据范围拿分、近三年（2023–2025）骗分保底得分汇总、考场时间分配与常见失分点（平时训练以主站题目为准，抢分技巧仅供比赛时兜底使用）。
+
 ## ⚙️ 关于实时评测
 
 GitHub Pages 只能托管静态页面，无法在后端编译 C++，因此本站通过浏览器调用
