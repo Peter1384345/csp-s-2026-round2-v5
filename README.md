@@ -95,7 +95,7 @@ powershell -ExecutionPolicy Bypass -File tools/push-to-github.ps1
 ## ⚙️ 关于实时评测
 
 GitHub Pages 只能托管静态页面，无法在后端编译 C++，因此本站通过浏览器调用
-**Wandbox**（`https://wandbox.org/api/compile.json`，公共、免密钥、支持 CORS）编译并运行代码，
+公共编译服务**双通道**编译并运行代码：主通道 **Wandbox**（`https://wandbox.org/api/compile.json`，gcc 13.2.0），备用通道 **Compiler Explorer**（`https://godbolt.org/api/compiler/g133/compile`；原计划的 Piston 公共实例自 2026-02 起改为白名单授权制，不再可用）。网络错误 / 限流 / 容量不足时自动切换通道重试，避免单点故障；
 再用题目自带的隐藏测试数据判定。
 
 - 编译环境：gcc 13.2.0（`-std=c++17`），支持 `#include <bits/stdc++.h>`。
@@ -114,7 +114,7 @@ js/core/
   trace.js                 算法追踪引擎（T.step / T.answer / 逐步对比 / 对拍）
   runner.js                Web Worker 安全运行器（死循环不会卡页面）
   render.js                可视化渲染器（数组/柱状/矩阵/图/树/字符串/栈）
-  judge.js                 实时评测（Wandbox 编译运行 + 缓存 + 重试）
+  judge.js                 实时评测（Wandbox + Compiler Explorer 双通道 + 缓存 + 故障切换重试）
   store.js                 本地存储（进度/错题/知识点标记/模拟赛）
   editor.js                代码编辑器（行号/语法着色/执行行高亮）
   ui.js                    通用 UI 组件
