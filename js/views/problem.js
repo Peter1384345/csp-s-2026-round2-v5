@@ -501,7 +501,7 @@
     /* -------- 右：编辑器 + 评测 -------- */
     h += '<div><div class="panel">';
     h += '<div class="panel-hd"><span class="dot"></span>提交评测 · C++17' +
-      '<span class="more">编译服务：Wandbox（gcc 13.2.0）</span></div>';
+      '<span class="more">编译服务：Wandbox + Compiler Explorer 双通道（gcc）</span></div>';
     h += '<div class="ed-toolbar">' +
       '<span class="mono-sm">' + U.esc(p.limits ? (p.limits.time + ' / ' + p.limits.memory) : '1s / 128MB') + '</span>' +
       '<span class="right">' +
@@ -703,7 +703,7 @@
         U.$('#pv-rows').innerHTML = '';
         if (box0) box0.innerHTML =
           '<div class="verdict bad"><span class="big v-ERR">服务繁忙</span>' +
-          '<span>' + r.serviceErrors + ' / ' + r.total + ' 个测试点因公共编译服务（Wandbox）容量不足未能完成</span></div>' +
+          '<span>' + r.serviceErrors + ' / ' + r.total + ' 个测试点因公共编译服务（Wandbox / Compiler Explorer）容量不足未能完成</span></div>' +
           '<div class="mono-sm mb">已完成 ' + r.passed + ' / ' + r.total + ' 个测试点，本次得分 ' + r.score +
           ' 分。<b>本次结果不计入错题本，也不会把知识点标为待巩固</b>——这不是你的代码的问题。</div>' +
           '<button class="btn btn-primary btn-sm" id="pv-retry">重新评测</button>' + rowsHtml;
